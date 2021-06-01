@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "schema-import": "node ./scripts/schema-import.js"
+    "schema-import": "node ./scripts/schema-import.js",
+    "fixtures": "node ./scripts/fixtures.js"
   },
   "jest": {
     "automock": false,
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "colors": "^1.4.0",
+    "faunadb": "^4.3.0",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
     "next": "latest",

@@ -1,8 +1,32 @@
 type Task {
    title: String!
    completed: Boolean
+   user: User!
 }
+
 type Query {
    allTasks: [Task!]
+   allUsers: [User!]
+   userByUsername(username: String!): User!
    tasksByCompletedFlag(completed: Boolean!): [Task!]
+}
+
+type User {
+  username: String! @unique
+  tasks: [Task!] @relation
+}
+
+input CreateUserInput {
+  username: String!
+  password: String!
+}
+
+input LoginUserInput {
+  username: String!
+  password: String!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput): User! @resolver(name: "create_user")
+  loginUser(input: LoginUserInput): String! @resolver(name: "login_user")
 }

@@ -2,18 +2,24 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { GraphQLClient } from 'graphql-request';
 
 
-class MethodNotAllowedError extends Error {}
+class MethodNotAllowedError extends Error { }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { query, variables } = req.body;
 
     // Récupère les variables d'environnement
-    const { FAUNA_API_ENDPOINT, FAUNA_DB_KEY } = process.env;
+    const {
+      FAUNA_GRAPHQL_DOMAIN,
+      FAUNA_SECRET
+    } = process.env;
 
-    if (typeof FAUNA_API_ENDPOINT === 'undefined') {
-      throw new Error('Fauna API endpoint missing in environment variables.');
-    }
+    // if (typeof FAUNA_API_ENDPOINT === 'undefined') {
+    //   throw new Error('Fauna API endpoint missing in environment variables.');
+    // }
+    // if (typeof FAUNA_DB_KEY === 'undefined') {
+    //   throw new Error('Fauna secret missing in environment variables.');
+    // }
 
     // Vérifie que la requête HTTP est bien en méthode POST
     //if (req.method !== 'POST') {
@@ -21,9 +27,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     //};
 
     // Crée un client capable d'envoyer des requêtes GraphQL à Fauna
-    const graphQLClient = new GraphQLClient(FAUNA_API_ENDPOINT, {
+    const graphQLClient = new GraphQLClient(`${FAUNA_GRAPHQL_DOMAIN}/graphql`, {
       headers: {
-        authorization: `Bearer ${FAUNA_DB_KEY}`,
+        authorization: `Bearer ${FAUNA_SECRET}`,
       },
     })
 
@@ -40,7 +46,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       res.status(500).json({ statusCode: 500, message: error.message })
     }
   }
-  
+
 }
 
 export default handler

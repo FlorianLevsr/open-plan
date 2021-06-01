@@ -1,0 +1,52 @@
+{
+    "User": [
+        {
+            "id": "1",
+            "username": "jean-pierre",
+            "password": "jean-pierre"
+        },
+        {
+            "id": "2",
+            "username": "anne-marie",
+            "password": "anne-marie"
+        }
+    ],
+    "Task": [
+        {
+            "id": "1",
+            "title": "Manger des frites",
+            "completed": false,
+            "userId": "1"
+        },
+        {
+            "id": "2",
+            "title": "Acheter de l'huile",
+            "completed": false,
+            "userId": "1"
+        },
+        {
+            "id": "3",
+            "title": "Aller à la piscine",
+            "completed": false,
+            "userId": "1"
+        },
+        {
+            "id": "4",
+            "title": "Ranger ma chambre",
+            "completed": false,
+            "userId": "2"
+        },
+        {
+            "id": "5",
+            "title": "Jouer à Dark Souls",
+            "completed": false,
+            "userId": "2"
+        },
+        {
+            "id": "6",
+            "title": "Ouvrir des boîtes de conserve",
+            "completed": false,
+            "userId": "2"
+        }
+    ]
+}
