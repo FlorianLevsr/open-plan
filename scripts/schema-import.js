@@ -114,6 +114,7 @@ const q = faunadb.query;
     })
   );
 
+  // Define "current user" resolver
   await client.query(
     q.Update(q.Function("current_user"), {
       "body": q.Query(
@@ -124,11 +125,11 @@ const q = faunadb.query;
     })
   );
 
+  // Delete all existing roles
   await client.query(
-    q.If(
-      q.Exists(q.Role("user")),
-      q.Delete(q.Role("user")),
-      null
+    q.Map(
+      q.Paginate(q.Roles()),
+      q.Lambda('X', q.Delete(q.Var('X')))
     )
   );
 
@@ -142,22 +143,48 @@ const q = faunadb.query;
     )
   );
 
+  // Define a set of access rules
   await client.query(
     q.CreateRole({
       name: "user",
       membership: {
+        // These rules apply to all authentified users
         resource: q.Collection("User")
       },
       privileges: [
+        // Users can access a list of all tasks (individual tasks for which access is not permitted will be filtered out)
+        {
+          resource: q.Index("allTasks"),
+          actions: {
+            read: true,
+          }
+        },
+        // Users can create new tasks, but they can read, modify and delete tasks only if they created them in the first place
         {
           resource: q.Collection("Task"),
           actions: {
-            read: isAuthor,
             create: true,
+            read: isAuthor,
             write: isAuthor,
             delete: isAuthor,
           }
         },
+        // Users can access only their own user data
+        {
+          resource: q.Collection("User"),
+          actions: {
+            read: q.Query(
+              q.Lambda(
+                'ref',
+                q.Equals(
+                  q.CurrentIdentity(),
+                  q.Var('ref')
+                )
+              )
+            ),
+          }
+        },
+        // Users can access the action that returns their own user data
         {
           resource: q.Function('current_user'),
           actions: {
