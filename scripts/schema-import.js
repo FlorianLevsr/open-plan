@@ -3,6 +3,7 @@ const fetch = require('node-fetch');
 const colors = require('colors');
 require('dotenv').config();
 const faunadb = require('faunadb');
+const { Collection, Role } = require('faunadb');
 const q = faunadb.query;
 
 (async () => {
@@ -113,4 +114,59 @@ const q = faunadb.query;
     })
   );
 
+  await client.query(
+    q.Update(q.Function("current_user"), {
+      "body": q.Query(
+        q.Lambda([],
+          q.Get(q.CurrentIdentity())
+        )
+      )
+    })
+  );
+
+  await client.query(
+    q.If(
+      q.Exists(q.Role("user")),
+      q.Delete(q.Role("user")),
+      null
+    )
+  );
+
+  const isAuthor = q.Query(
+    q.Lambda(
+      'ref',
+      q.Equals(
+        q.CurrentIdentity(),
+        q.Select(['data', 'user'], q.Get(q.Var('ref')))
+      )
+    )
+  );
+
+  await client.query(
+    q.CreateRole({
+      name: "user",
+      membership: {
+        resource: q.Collection("User")
+      },
+      privileges: [
+        {
+          resource: q.Collection("Task"),
+          actions: {
+            read: isAuthor,
+            create: true,
+            write: isAuthor,
+            delete: isAuthor,
+          }
+        },
+        {
+          resource: q.Function('current_user'),
+          actions: {
+            call: true
+          }
+        }
+      ]
+    })
+  );
+
 })();
+
