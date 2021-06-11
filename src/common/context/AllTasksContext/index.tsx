@@ -1,16 +1,25 @@
-import React, { createContext, ReactNode } from "react";
-import { gql } from "graphql-request";
-import { Task } from "../../types/Task";
-import useSWR from 'swr';
+import React, { createContext, FC } from "react";
+import { gql, useQuery, useMutation } from '@apollo/client';
+import { FaunaId, FaunaPage, Task } from "../../types/fauna";
+import { FaunaApolloClient } from '../../utils';
 
-// Décrit la structure des données
+// Describe query data structure
 export interface AllTasksData {
-  allTasks: {
-    data: Task[];
-  }
+  allTasks: FaunaPage<Task>
 }
 
-// Décrit les données à récupérér de l'API
+interface CreateTaskData {
+  createTask: Task;
+}
+
+interface DeleteTaskData {
+  deleteTask: FaunaId;
+}
+
+/**
+ * SECTION GraphQL queries
+ */
+// Describe data to query from the API
 export const query = gql`
   query AllTasksQuery {
     allTasks {
@@ -23,31 +32,68 @@ export const query = gql`
   }
 `;
 
-// Méthode permettant de récupérer les données de l'API
-export const fetcher = (variables: Record<string, string | boolean> = {}) =>
-  async (query: string) => {
-    const response = await fetch('http://localhost:3000/api/fauna', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ query, variables })
-    });
-
-    if (!response.ok) {
-      throw new Error('An error occurred while executing a GraphQL query on Fauna.');
+// Describe create query
+const createQuery = gql`
+  mutation createTask($title: String!) {
+    createTask(input: { title: $title }) {
+      _id
+      title
+      completed
     }
-
-    const data = await response.json();
-
-    return data;
   }
+`;
+
+// Describe update task title query
+const updateTitleQuery = gql`
+  mutation updateTaskTitle($_id: ID!, $title: String!) {
+    updateTaskTitle(input: {
+      id: $_id,
+      title: $title,
+    }) {
+      _id
+      title
+      completed
+    }
+  }
+`;
+
+// Describe update task completed query
+const updateCompletedQuery = gql`
+  mutation updateTaskCompleted($_id: ID!, $completed: Boolean!) {
+    updateTaskCompleted(input: {
+      id: $_id,
+      completed: $completed,
+    }) {
+      _id
+      title
+      completed
+    }
+  }
+`;
+
+// Describe delete query
+const deleteQuery = gql`
+  mutation deleteTask($_id: ID!) {
+    deleteTask(id: $_id) {
+      _id
+    }
+  }
+`;
+/**
+ * !SECTION
+ */
+
+export const getInitialData = async () => {
+  const { data, errors } = await FaunaApolloClient.query<AllTasksData>({ query });
+  if (errors) throw errors[0];
+  return data;
+}
 
 interface AllTasksContextValue extends AllTasksData {
   actions: {
-    addTask: (task: Task) => void;
-    updateTask: (id: string, task: Task) => void;
+    createTask: (task: Partial<Task>) => void;
+    updateTaskCompleted: (id: string, completed: boolean) => void;
+    updateTaskTitle: (id: string, title: string) => void;
     deleteTask: (id: string) => void;
   }
 }
@@ -55,100 +101,72 @@ interface AllTasksContextValue extends AllTasksData {
 export const AllTasksContext = createContext<AllTasksContextValue>({
   allTasks: { data: [] },
   actions: {
-    addTask: () => undefined,
-    updateTask: () => undefined,
+    createTask: () => undefined,
+    updateTaskCompleted: () => undefined,
+    updateTaskTitle: () => undefined,
     deleteTask: () => undefined,
   }
 });
 
 interface AllTasksContextProviderProps {
-  children: (contextValue: AllTasksContextValue) => ReactNode,
   initialData: AllTasksData;
 }
 
-export const AllTasksContextProvider = ({ children, initialData }: AllTasksContextProviderProps) => {
-  const { data, mutate } = useSWR<AllTasksData, Error>(query, fetcher(), { initialData });
+export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ children, initialData }) => {
+  /**
+   * SECTION Apollo hooks
+   */
+  // ANCHOR Send request using Apollo client to revalidate initial data
+  const { loading, error, data: queryData } = useQuery<AllTasksData>(query);
+  // ANCHOR Mutation which allows to create a new item
+  const [createTaskMutation] = useMutation<CreateTaskData, Partial<Task>>(createQuery, {
+    update: (cache, { data }) => {
+      if (!data) throw new Error('Pouet');
+      const existingTasks = cache.readQuery<AllTasksData>({ query });
+      if (!existingTasks) throw new Error('Pouet');
+      cache.writeQuery({ query, data: {
+        allTasks: [...existingTasks.allTasks.data, data.createTask]
+      }});
+    }
+  });
+  // ANCHOR Mutations which allows to modify an existing item
+  const [updateTaskCompletedMutation] = useMutation<CreateTaskData, Partial<Task>>(updateCompletedQuery);
+  const [updateTaskTitleMutation] = useMutation<CreateTaskData, Partial<Task>>(updateTitleQuery);
+  // ANCHOR Mutation which allows to delete an existing item
+  const [deleteTaskMutation] = useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
+    update: (cache, { data }) => {
+      if (!data) throw new Error('Pouet');
+      const existingTasks = cache.readQuery<AllTasksData>({ query });
+      if (!existingTasks) throw new Error('Pouet');
+      cache.writeQuery({ query, data : {
+        allTasks: existingTasks.allTasks.data.filter(
+          task => task._id !== data.deleteTask._id
+        )
+      }});
+    }
+  });
+  /**
+   * !SECTION
+   */
 
-  if (typeof data === 'undefined') throw new Error('Data cannot be undefined in AllTasksContextProvider.');
+  // If query hasn't returned a result yet, use initial data
+  const data = queryData || initialData;
 
-  const { allTasks } = data;
-
-  // Méthode permettant d'ajouter une nouvelle tâche aux tâches existantes
-  const addTask = (task: Task) =>
-    mutate(async () => {
-      const result: { createTask: Task } = await fetcher({ ...task })(gql`
-        mutation AddTask($title: String!) {
-          createTask(data: {
-            title: $title,
-            completed: false
-          }) {
-            _id
-            title
-            completed
-          }
-        }
-      `);
-
-      return {
-        allTasks: {
-          data: [...allTasks.data, result.createTask]
-        }
-      };
-    });
-
-  // Méthode permettant de modifier une tâche existante
-  const updateTask = (id: string, task: Task) =>
-    mutate(async () => {
-      const result: { updateTask: Task } = await fetcher({ id, ...task })(gql`
-        mutation updateTask($id: ID!, $title: String!, $completed: Boolean) {
-          updateTask(id: $id, data: {
-            title: $title,
-            completed: $completed
-          }) {
-            _id
-            title
-            completed
-          }
-        }
-      `);
-
-      return {
-        allTasks: {
-          data: allTasks.data.map(item => item._id == task._id ? result.updateTask : item)
-        }
-      };
-    });
-
-  // Méthode permettant de supprimer une tâche
-  const deleteTask = (id: string) =>
-    mutate(async () => {
-      const result: { deleteTask: Task } = await fetcher({ id })(gql`
-        mutation deleteTask($id: ID!) {
-          deleteTask(id: $id) {
-            _id
-          }
-        }
-      `);
-
-      return {
-        allTasks: {
-          data: allTasks.data.filter(item => item._id !== id)
-        }
-      };
-    });
-
+  // ANCHOR Pack data and actions to dispatch through components
   const value = {
     ...data,
     actions: {
-      addTask,
-      updateTask,
-      deleteTask,
+      createTask: (task: Partial<Task>) => { createTaskMutation({ variables: { ...task } }); },
+      updateTaskCompleted: (_id: string, completed: boolean) => { updateTaskCompletedMutation({ variables: { _id, completed } }); },
+      updateTaskTitle: (_id: string, title: string) => { updateTaskTitleMutation({ variables: { _id, title } }); },
+      deleteTask: (_id: string) => { deleteTaskMutation({ variables: { _id } }); },
     }
   }
 
+  // ANCHOR Template
   return (
     <AllTasksContext.Provider value={value}>
-      {children(value)}
+      {children}
     </AllTasksContext.Provider>
-  )
+  );
 }

@@ -2,7 +2,7 @@ import React from 'react'
 import { act } from 'react-dom/test-utils';
 import { mount } from 'enzyme'
 import { SWRConfig, cache } from 'swr'
-import IndexPage from '../src/pages/index';
+import IndexPage from '../src/pages/tasks';
 
 const allTasksMock = {
   allTasks: {

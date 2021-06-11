@@ -10,8 +10,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Récupère les variables d'environnement
     const {
-      FAUNA_GRAPHQL_DOMAIN,
-      FAUNA_SECRET
+      NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN,
+      NEXT_PUBLIC_FAUNA_SECRET
     } = process.env;
 
     // if (typeof FAUNA_API_ENDPOINT === 'undefined') {
@@ -27,14 +27,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     //};
 
     // Crée un client capable d'envoyer des requêtes GraphQL à Fauna
-    const graphQLClient = new GraphQLClient(`${FAUNA_GRAPHQL_DOMAIN}/graphql`, {
+    const graphQLClient = new GraphQLClient(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/graphql`, {
       headers: {
-        authorization: `Bearer ${FAUNA_SECRET}`,
+        authorization: `Bearer ${NEXT_PUBLIC_FAUNA_SECRET}`,
       },
     })
 
     // Envoie la requête GraphQL
     const data = await graphQLClient.request(query, variables);
+
     // Renvoie le résultat de la requête au client
     res.status(200).json(data);
 

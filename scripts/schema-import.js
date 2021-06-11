@@ -3,20 +3,19 @@ const fetch = require('node-fetch');
 const colors = require('colors');
 require('dotenv').config();
 const faunadb = require('faunadb');
-const { Collection, Role } = require('faunadb');
 const q = faunadb.query;
 
 (async () => {
 
   // Check for missing environment variables
-  for (const varName of ['FAUNA_GRAPHQL_DOMAIN', 'FAUNA_SECRET_ADMIN']) {
+  for (const varName of ['NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN', 'FAUNA_SECRET_ADMIN']) {
     if (typeof process.env[varName] === 'undefined') {
       throw new Error(`Environment variable ${varName} is missing.`);
     }
   }
 
   const {
-    FAUNA_GRAPHQL_DOMAIN,
+    NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN,
     FAUNA_DOMAIN,
     FAUNA_SECRET_ADMIN,
   } = process.env;
@@ -34,7 +33,7 @@ const q = faunadb.query;
     if (!match) {
       throw new Error('FAUNA_DOMAIN environment variable must be a valid URI.');
     }
-    
+
     clientOptions.scheme = match[1];
     clientOptions.domain = match[2];
 
@@ -51,8 +50,9 @@ const q = faunadb.query;
     // Read the schema from the .graphql file
     const stream = fs.createReadStream('schema.graphql');
 
+    // TODO: Add optional override flag to import im override mode instead of default merge mode
     // Send the file to Fauna
-    await fetch(`${FAUNA_GRAPHQL_DOMAIN}/import`, {
+    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import`, {
       method: 'POST',
       body: stream,
       headers: {
@@ -60,20 +60,22 @@ const q = faunadb.query;
         'Authorization': `Bearer ${FAUNA_SECRET_ADMIN}`,
       }
     })
-    .then(response => {
-      if (response.ok) {
-        console.log(`Schema has been sucessfully imported\n`.green.bold, `Status code: `.bold, `${response.status} `.yellow.bold)
-        return;
-      }
-
-      switch (response.status) {
-        case 401:
-          console.log(`Access denied - Please verify FAUNA_SECRET_ADMIN in environement variables\n`.red.bold, `Status code: ${response.status}`.yellow.bold)
+      .then(response => {
+        if (response.ok) {
+          console.log(`Schema has been sucessfully imported\n`.green.bold, `Status code: `.bold, `${response.status} `.yellow.bold)
           return;
-      }
+        }
 
-    });
+        switch (response.status) {
+          case 401:
+            console.log(`Access denied - Please verify FAUNA_SECRET_ADMIN in environement variables\n`.red.bold, `Status code: ${response.status}`.yellow.bold)
+            return;
+        }
+
+      });
   }
+
+  // TODO: Add console feedback to describe what's going on
 
   // Import the GraphQL schema into Fauna
   await importSchema();
@@ -96,8 +98,8 @@ const q = faunadb.query;
       )
     })
   );
-  
-  // Define "login user" resolver
+
+  // Define user login resolver
   const updateLoginUserResolver = await client.query(
     q.Update(q.Function("login_user"), {
       "body": q.Query(
@@ -114,12 +116,74 @@ const q = faunadb.query;
     })
   );
 
+  // Define user logout resolver
+  const updateLogoutUserResolver = await client.query(
+    q.Update(q.Function("logout_user"), {
+      "body": q.Query(
+        q.Lambda([],
+          q.Logout(
+          true
+        )
+        )
+      )
+    })
+  );
+
+  // Define "create task" resolver
+  const updateCreateTaskResolver = await client.query(
+    q.Update(q.Function("create_task"), {
+      "body": q.Query(
+        q.Lambda(["input"],
+          q.Create(q.Collection("Task"), {
+            data: {
+              title: q.Select("title", q.Var("input")),
+              completed: false,
+              user: q.CurrentIdentity()
+            }
+          })
+        )
+      )
+    })
+  );
+
+  // Define "updateTaskTitle" resolver
+  const updateUpdateTaskTitleResolver = await client.query(
+    q.Update(q.Function("update_task_title"), {
+      "body": q.Query(
+        q.Lambda(["input"],
+          q.Update(q.Ref(q.Collection('Task'), q.Select("id", q.Var("input"))), {
+            data: {
+              title: q.Select("title", q.Var("input")),
+              user: q.CurrentIdentity(),
+            }
+          })
+        )
+      )
+    })
+  );
+
+  // Define "updateTaskCompleted" resolver
+  const updateUpdateTaskCompletedResolver = await client.query(
+    q.Update(q.Function("update_task_completed"), {
+      "body": q.Query(
+        q.Lambda(["input"],
+          q.Update(q.Ref(q.Collection('Task'), q.Select("id", q.Var("input"))), {
+            data: {
+              completed: q.Select("completed", q.Var("input")),
+              user: q.CurrentIdentity(),
+            }
+          })
+        )
+      )
+    })
+  );
+
   // Define "current user" resolver
   await client.query(
     q.Update(q.Function("current_user"), {
       "body": q.Query(
         q.Lambda([],
-          q.Get(q.CurrentIdentity())
+          q.If(q.HasCurrentIdentity(), q.Get(q.CurrentIdentity()), null)
         )
       )
     })
@@ -143,6 +207,8 @@ const q = faunadb.query;
     )
   );
 
+  // TODO: Define a basic role only allowed to sign up and log in + matching key
+
   // Define a set of access rules
   await client.query(
     q.CreateRole({
@@ -156,16 +222,36 @@ const q = faunadb.query;
         {
           resource: q.Index("allTasks"),
           actions: {
-            read: true,
+            read: true
           }
         },
         // Users can create new tasks, but they can read, modify and delete tasks only if they created them in the first place
         {
           resource: q.Collection("Task"),
           actions: {
+            // Authenticated users can always create new tasks
             create: true,
+            // Authenticated users can only read tasks they have created
             read: isAuthor,
-            write: isAuthor,
+            // Authenticated users can only modify tasks they have created, and cannot change their owner
+            write: q.Query(
+              q.Lambda(
+                ['oldData', 'newData'],
+                q.And(
+                  // Identity of current user is compared to identity of old user/original creator of the task
+                  q.Equals(
+                    q.CurrentIdentity(),
+                    q.Select(['data', 'user'], q.Var('oldData'))
+                  ),
+                  // Identity of the new 'writer' is compared to identity of old user/original creator of the task
+                  q.Equals(
+                    q.Select(['data', 'user'], q.Var('newData')),
+                    q.Select(['data', 'user'], q.Var('oldData'))
+                  )
+                )
+              )
+            ),
+            // Authenticated users can only delete tasks they have created
             delete: isAuthor,
           }
         },
@@ -187,6 +273,34 @@ const q = faunadb.query;
         // Users can access the action that returns their own user data
         {
           resource: q.Function('current_user'),
+          actions: {
+            call: true
+          }
+        },
+        // User can log out
+        {
+          resource: q.Function('logout_user'),
+          actions: {
+            call: true
+          }
+        },
+        // Users can access the action the function that allows a user to create a task
+        {
+          resource: q.Function('create_task'),
+          actions: {
+            call: true
+          }
+        },
+        // Users can update the title of a task
+        {
+          resource: q.Function('update_task_title'),
+          actions: {
+            call: true
+          }
+        },
+        // Users can update the state of task (to do/completed - true/false)
+        {
+          resource: q.Function('update_task_completed'),
           actions: {
             call: true
           }

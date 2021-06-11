@@ -1,22 +1,59 @@
+# ===========================================================================
+# SECTION - Client types
+# ---------------------------------------------------------------------------
+# Data model used in the client application.
+# ===========================================================================
+
+# ANCHOR Task
+"""
+A task in a user's to-do list.
+"""
 type Task {
+    "The task's description."
     title: String!
+    "Whether the task was completed (true) or not (false)."
     completed: Boolean
+    "The user whom the task belongs to."
     user: User!
 }
 
+# ANCHOR User
+"""
+A user account.
+"""
+type User {
+    "The user's user name."
+    username: String! @unique
+    "A list of all tasks owned by the user."
+    tasks: [Task!] @relation
+}
+# ===========================================================================
+# !SECTION
+# ===========================================================================
+
+
+# ===========================================================================
+# SECTION - Queries
+# ---------------------------------------------------------------------------
+# Actions used to retrieve data.
+# Documentation is generated automatically by Fauna for non-custom resolvers.
+# ===========================================================================
 type Query {
     allTasks: [Task!]
     allUsers: [User!]
     userByUsername(username: String!): User!
     tasksByCompletedFlag(completed: Boolean!): [Task!]
-    currentUser: User! @resolver(name: "current_user")
 }
+# ===========================================================================
+# !SECTION
+# ===========================================================================
 
-type User {
-    username: String! @unique
-    tasks: [Task!] @relation
-}
 
+# ===========================================================================
+# SECTION - Input types
+# ---------------------------------------------------------------------------
+# Types used in mutations as paremeters.
+# ===========================================================================
 input CreateUserInput {
     username: String!
     password: String!
@@ -27,7 +64,44 @@ input LoginUserInput {
     password: String!
 }
 
-type Mutation {
-    createUser(input: CreateUserInput): User! @resolver(name: "create_user")
-    loginUser(input: LoginUserInput): String! @resolver(name: "login_user")
+input CreateTaskInput {
+    title: String!
 }
+
+input UpdateTaskTitleInput {
+    id: ID!
+    title: String!
+}
+
+input UpdateTaskCompletedInput {
+    id: ID!
+    completed: Boolean!
+}
+# ===========================================================================
+# !SECTION
+# ===========================================================================
+
+
+# ===========================================================================
+# SECTION - Queries
+# ---------------------------------------------------------------------------
+# Actions used to transform data
+# Documentation is generated automatically by Fauna for non-custom resolvers.
+# ===========================================================================
+type Mutation {
+    "Register a new user account with provided username and password."
+    createUser(input: CreateUserInput): User! @resolver(name: "create_user")
+    "Authenticate a user with provided username and password."
+    loginUser(input: LoginUserInput): String! @resolver(name: "login_user")
+    "Invalidate all authentication tokens linked to currently authenticated user."
+    logoutUser: Boolean! @resolver(name: "logout_user")
+    "Create a new task owned by currently authenticated user."
+    createTask(input: CreateTaskInput): Task! @resolver(name: "create_task")
+    "Update the description of an existing task."
+    updateTaskTitle(input: UpdateTaskTitleInput): Task! @resolver(name: "update_task_title")
+    "Update the completed flag of an existing task."
+    updateTaskCompleted(input: UpdateTaskCompletedInput): Task! @resolver(name: "update_task_completed")
+}
+# ===========================================================================
+# !SECTION
+# ===========================================================================
