@@ -7,14 +7,14 @@ const data = require('../data.json');
 (async () => {
 
   // Check for missing environment variables
-  for (const varName of ['FAUNA_GRAPHQL_DOMAIN', 'FAUNA_SECRET_ADMIN']) {
+  for (const varName of ['NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN', 'FAUNA_SECRET_ADMIN']) {
     if (typeof process.env[varName] === 'undefined') {
       throw new Error(`Environment variable ${varName} is missing.`);
     }
   }
 
   const {
-    FAUNA_GRAPHQL_DOMAIN,
+    NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN,
     FAUNA_DOMAIN,
     FAUNA_SECRET_ADMIN,
   } = process.env;
