@@ -7,9 +7,10 @@ import { User } from "../types/fauna";
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client/core";
 
 interface GetServerSidePropsCallbackParameters {
-  currentUser?: User | null;
   client: ApolloClient<NormalizedCacheObject>;
+  currentUser?: User | null | undefined;
 }
+
 type GetServerSidePropsCallback = (params: GetServerSidePropsCallbackParameters) => Promise<GetServerSidePropsResult<{ [key: string]: any; }>>;
 
 interface GetServerSidePropsWithAuthenticationOptions {

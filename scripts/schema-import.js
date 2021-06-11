@@ -52,7 +52,8 @@ const q = faunadb.query;
 
     // TODO: Add optional override flag to import im override mode instead of default merge mode
     // Send the file to Fauna
-    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import?mode=override`, {
+    //?mode=override
+    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import`, {
       method: 'POST',
       body: stream,
       headers: {
@@ -268,6 +269,18 @@ const q = faunadb.query;
             read: true
           }
         },
+        {
+          resource: q.Index("unique_User_username"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("task_user_by_user"),
+          actions: {
+            read: true
+          }
+        },
         // Users can create new tasks, but they can read, modify and delete tasks only if they created them in the first place
         {
           resource: q.Collection("Task"),
@@ -298,6 +311,7 @@ const q = faunadb.query;
             delete: isAuthor,
           }
         },
+        
         // Users can access only their own user data
         {
           resource: q.Collection("User"),

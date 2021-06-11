@@ -1,7 +1,6 @@
 import React, { createContext, FC } from "react";
-import { gql, useQuery, useMutation } from '@apollo/client';
+import { gql, useQuery, useMutation, ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { FaunaId, Task, User } from "../../types/fauna";
-import { FaunaApolloClient } from '../../utils';
 
 // Describe query data structure
 export interface AllTasksData {
@@ -39,8 +38,8 @@ export const query = gql`
 
 // TEST // Describe tasks by user
 export const testQuery = gql`
-  query FindUserByID($id: ID!) {
-    findUserByID(id: $id) {
+  query FindUserByID($_id: ID!) {
+    findUserByID(id: $_id) {
       _id
       tasks {
         data {
@@ -106,9 +105,9 @@ const deleteQuery = gql`
  * !SECTION
  */
 
-export const getInitialData = async (currentUser: User | undefined) => {
+export const getInitialData = async (client: ApolloClient<NormalizedCacheObject>, currentUser: User | undefined | null) => {
   if (typeof currentUser !== undefined) {
-    const { data, errors } = await FaunaApolloClient.query<any>({ query: testQuery, variables: { id: currentUser?._id } });
+    const { data, errors } = await client.query<AllTasksData>({ query: testQuery, variables: { _id: currentUser?._id } });
     if (errors) throw errors[0];
     return data;
   }
@@ -136,24 +135,29 @@ export const AllTasksContext = createContext<AllTasksContextValue>({
 
 interface AllTasksContextProviderProps {
   initialData: AllTasksData;
+  currentUser: User
 }
 
-export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ children, initialData }) => {
+
+
+export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ children, initialData, currentUser }) => {
   /**
    * SECTION Apollo hooks
    */
   // ANCHOR Send request using Apollo client to revalidate initial data
-  const { loading, error, data: queryData } = useQuery<AllTasksData>(testQuery, { variables: { id: 1 } });
 
+  let _id = currentUser._id;
+
+  const { loading, error, data: queryData } = useQuery<AllTasksData>(testQuery, { variables: { _id } });
 
   // ANCHOR Mutation which allows to create a new item
   const [createTaskMutation] = useMutation<CreateTaskData, Partial<Task>>(createQuery, {
     update: (cache, { data }) => {
       if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { id: 1 } });
+      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { _id }});
       if (!existingTasks) throw new Error('Pouet Pouet');
       cache.writeQuery({
-        query, data: {
+        query: testQuery, variables: { _id }, data: {
           findUserByID: { tasks: { data: [...existingTasks.findUserByID.tasks.data, data.createTask] } }
         }
       });
@@ -167,10 +171,10 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ chil
   const [deleteTaskMutation] = useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
     update: (cache, { data }) => {
       if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { id: 1 } });
+      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { _id } });
       if (!existingTasks) throw new Error('Pouet');
       cache.writeQuery({
-        query, data: {
+        query: testQuery, variables: { _id },  data: {
           findUserByID: {
             tasks: {
               data: existingTasks.findUserByID.tasks.data.filter(
@@ -186,6 +190,7 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ chil
    * !SECTION
    */
 
+  
   // If query hasn't returned a result yet, use initial data
   const data = queryData || initialData;
 
