@@ -4,8 +4,13 @@ import { CurrentUserData, query } from "../context/AuthContext";
 import FaunaTokenManager from "./fauna-token-manager";
 import * as cookie from 'cookie';
 import { User } from "../types/fauna";
+import { ApolloClient, NormalizedCacheObject } from "@apollo/client/core";
 
-type GetServerSidePropsCallback = (currentUser: User | undefined) => Promise<GetServerSidePropsResult<{ [key: string]: any; }>>;
+interface GetServerSidePropsCallbackParameters {
+  currentUser?: User | null;
+  client: ApolloClient<NormalizedCacheObject>;
+}
+type GetServerSidePropsCallback = (params: GetServerSidePropsCallbackParameters) => Promise<GetServerSidePropsResult<{ [key: string]: any; }>>;
 
 interface GetServerSidePropsWithAuthenticationOptions {
   callback?: GetServerSidePropsCallback;
@@ -32,11 +37,23 @@ const getServerSidePropsWithAuthentication = (options: GetServerSidePropsWithAut
     }
   
     const faunaTokenManager = new FaunaTokenManager(parsedCookies);
+    console.log(faunaTokenManager.get());
   
     const client = createFaunaApolloClient(faunaTokenManager.get());
-    const response = await client.query<CurrentUserData>({ query });
 
-    if (xor(response.data.currentUser === null, redirectOnAuthenticated || false)) {
+    let currentUser;
+    try {
+      const response = await client.query<CurrentUserData>({ query });
+      if (response.data.currentUser === null) {
+        throw new Error('User is not authenticated.');
+      }
+      currentUser = response.data.currentUser;
+    }
+    catch (error) {
+      currentUser = null;
+    }
+
+    if (xor(currentUser === null, redirectOnAuthenticated || false)) {
       return {
         redirect: {
           permanent: false,
@@ -49,7 +66,7 @@ const getServerSidePropsWithAuthentication = (options: GetServerSidePropsWithAut
       return { props: {} };
     }
 
-    const result = await callback(response.data.currentUser);
+    const result = await callback({ currentUser, client });
     return result;
   }
 

@@ -1,12 +1,12 @@
-import { gql, useMutation, useQuery } from '@apollo/client';
+import { gql } from '@apollo/client/core';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/router';
 import { createContext, FC } from "react";
-import { useCookies } from 'react-cookie';
 import { User } from "../../types/fauna";
 import { FaunaTokenManager } from '../../utils';
 
 export interface CurrentUserData {
-  currentUser?: User;
+  currentUser?: User | null;
 }
 
 interface LoginData {
@@ -67,7 +67,6 @@ export const AuthContext = createContext<AuthContextValue>({
 // creation du provider
 export const AuthContextProvider: FC = ({ children }) => {
   const faunaTokenManager = new FaunaTokenManager();
-  const [cookies, setCookie, removeCookie] = useCookies(['token']);
   const { loading, error, data, refetch } = useQuery<CurrentUserData>(query);
 
   const router = useRouter();

@@ -1,7 +1,7 @@
 import React, { createContext, FC } from "react";
-import { gql, useQuery, useMutation } from '@apollo/client';
+import { ApolloClient, gql, NormalizedCacheObject } from '@apollo/client/core';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { FaunaId, FaunaPage, Task } from "../../types/fauna";
-import { FaunaApolloClient } from '../../utils';
 
 // Describe query data structure
 export interface AllTasksData {
@@ -83,8 +83,8 @@ const deleteQuery = gql`
  * !SECTION
  */
 
-export const getInitialData = async () => {
-  const { data, errors } = await FaunaApolloClient.query<AllTasksData>({ query });
+export const getInitialData = async (client: ApolloClient<NormalizedCacheObject>) => {
+  const { data, errors } = await client.query<AllTasksData>({ query });
   if (errors) throw errors[0];
   return data;
 }

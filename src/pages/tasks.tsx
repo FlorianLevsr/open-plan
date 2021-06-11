@@ -22,8 +22,8 @@ const TasksPage: FC<TasksPageProps> = ({ initialData }) => {
 }
 
 export const getServerSideProps: GetServerSideProps = getServerSidePropsWithAuthentication({
-  callback: async () => {
-    const initialData = await getInitialData();
+  callback: async ({ client }) => {
+    const initialData = await getInitialData(client);
     return { props: { initialData }};
   }
 });
