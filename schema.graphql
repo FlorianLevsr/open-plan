@@ -43,6 +43,7 @@ type Query {
     allUsers: [User!]
     userByUsername(username: String!): User!
     tasksByCompletedFlag(completed: Boolean!): [Task!]
+    currentUser: User @resolver(name: "current_user")
 }
 # ===========================================================================
 # !SECTION
