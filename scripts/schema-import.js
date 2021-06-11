@@ -52,7 +52,7 @@ const q = faunadb.query;
 
     // TODO: Add optional override flag to import im override mode instead of default merge mode
     // Send the file to Fauna
-    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import`, {
+    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import?mode=override`, {
       method: 'POST',
       body: stream,
       headers: {
@@ -207,7 +207,50 @@ const q = faunadb.query;
     )
   );
 
-  // TODO: Define a basic role only allowed to sign up and log in + matching key
+  // ANCHOR Define a role with a set of basic access rules for non-authenticated users
+  console.info('Creating guest role…');
+  await client.query(
+    q.CreateRole({
+      name: 'guest',
+      privileges: [
+        // Guests can access the list of all usernames (required to sign in)
+        {
+          resource: q.Index("unique_User_username"),
+          actions: {
+            read: true
+          }
+        },
+        // Guests can log into the application
+        {
+          resource: q.Function('login_user'),
+          actions: {
+            call: true
+          }
+        },
+        // Guests can access the "get current user" action (which should always return null for them)
+        {
+          resource: q.Function('current_user'),
+          actions: {
+            call: true
+          }
+        },
+      ]
+    })
+  );
+
+  // Generate an access token with guest privileges
+  console.info('Generating key for guest role…');
+  const guestKey = await client.query(
+    q.CreateKey({
+      role: q.Role('guest'),
+      data: {
+        name: 'For guests',
+      },
+    })
+  );
+
+  // TODO: Show only the key rather than the entire result of the query with a message explaining you should include it in your .env file
+  console.log(guestKey);
 
   // Define a set of access rules
   await client.query(
