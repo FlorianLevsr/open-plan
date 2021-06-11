@@ -1,11 +1,16 @@
 import React, { createContext, FC } from "react";
-import { ApolloClient, gql, NormalizedCacheObject } from '@apollo/client/core';
-import { useQuery, useMutation } from '@apollo/client/react';
-import { FaunaId, FaunaPage, Task } from "../../types/fauna";
+import { gql, useQuery, useMutation } from '@apollo/client';
+import { FaunaId, Task, User } from "../../types/fauna";
+import { FaunaApolloClient } from '../../utils';
 
 // Describe query data structure
 export interface AllTasksData {
-  allTasks: FaunaPage<Task>
+  findUserByID: {
+    _id: String
+    tasks: {
+      data: Task[]
+    }
+  }
 }
 
 interface CreateTaskData {
@@ -32,6 +37,22 @@ export const query = gql`
   }
 `;
 
+// TEST // Describe tasks by user
+export const testQuery = gql`
+  query FindUserByID($id: ID!) {
+    findUserByID(id: $id) {
+      _id
+      tasks {
+        data {
+          _id
+          title
+          completed
+        }
+      }
+    }
+  }
+`;
+
 // Describe create query
 const createQuery = gql`
   mutation createTask($title: String!) {
@@ -42,6 +63,8 @@ const createQuery = gql`
     }
   }
 `;
+
+
 
 // Describe update task title query
 const updateTitleQuery = gql`
@@ -83,10 +106,13 @@ const deleteQuery = gql`
  * !SECTION
  */
 
-export const getInitialData = async (client: ApolloClient<NormalizedCacheObject>) => {
-  const { data, errors } = await client.query<AllTasksData>({ query });
-  if (errors) throw errors[0];
-  return data;
+export const getInitialData = async (currentUser: User | undefined) => {
+  if (typeof currentUser !== undefined) {
+    const { data, errors } = await FaunaApolloClient.query<any>({ query: testQuery, variables: { id: currentUser?._id } });
+    if (errors) throw errors[0];
+    return data;
+  }
+  throw new Error('No user found')
 }
 
 interface AllTasksContextValue extends AllTasksData {
@@ -99,7 +125,7 @@ interface AllTasksContextValue extends AllTasksData {
 }
 
 export const AllTasksContext = createContext<AllTasksContextValue>({
-  allTasks: { data: [] },
+  findUserByID: { _id: '', tasks: { data: [] } },
   actions: {
     createTask: () => undefined,
     updateTaskCompleted: () => undefined,
@@ -117,32 +143,43 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ chil
    * SECTION Apollo hooks
    */
   // ANCHOR Send request using Apollo client to revalidate initial data
-  const { loading, error, data: queryData } = useQuery<AllTasksData>(query);
+  const { loading, error, data: queryData } = useQuery<AllTasksData>(testQuery, { variables: { id: 1 } });
+
+
   // ANCHOR Mutation which allows to create a new item
   const [createTaskMutation] = useMutation<CreateTaskData, Partial<Task>>(createQuery, {
     update: (cache, { data }) => {
       if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query });
-      if (!existingTasks) throw new Error('Pouet');
-      cache.writeQuery({ query, data: {
-        allTasks: [...existingTasks.allTasks.data, data.createTask]
-      }});
+      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { id: 1 } });
+      if (!existingTasks) throw new Error('Pouet Pouet');
+      cache.writeQuery({
+        query, data: {
+          findUserByID: { tasks: { data: [...existingTasks.findUserByID.tasks.data, data.createTask] } }
+        }
+      });
     }
   });
-  // ANCHOR Mutations which allows to modify an existing item
+
   const [updateTaskCompletedMutation] = useMutation<CreateTaskData, Partial<Task>>(updateCompletedQuery);
+
   const [updateTaskTitleMutation] = useMutation<CreateTaskData, Partial<Task>>(updateTitleQuery);
-  // ANCHOR Mutation which allows to delete an existing item
+
   const [deleteTaskMutation] = useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
     update: (cache, { data }) => {
       if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query });
+      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { id: 1 } });
       if (!existingTasks) throw new Error('Pouet');
-      cache.writeQuery({ query, data : {
-        allTasks: existingTasks.allTasks.data.filter(
-          task => task._id !== data.deleteTask._id
-        )
-      }});
+      cache.writeQuery({
+        query, data: {
+          findUserByID: {
+            tasks: {
+              data: existingTasks.findUserByID.tasks.data.filter(
+                task => task._id !== data.deleteTask._id
+              )
+            }
+          }
+        }
+      });
     }
   });
   /**

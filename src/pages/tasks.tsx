@@ -22,8 +22,13 @@ const TasksPage: FC<TasksPageProps> = ({ initialData }) => {
 }
 
 export const getServerSideProps: GetServerSideProps = getServerSidePropsWithAuthentication({
+<<<<<<< HEAD
   callback: async ({ client }) => {
     const initialData = await getInitialData(client);
+=======
+  callback: async (currentUser) => {
+    const initialData = await getInitialData(currentUser);
+>>>>>>> trying to replace AllTasks query with FindUserByID, cache ko
     return { props: { initialData }};
   }
 });
