@@ -35,22 +35,22 @@ const createStaticAuthLink = (token: string) => setContext((_, { headers }) => {
 });
 
 const createCache = () =>
-  new InMemoryCache({
-    // typePolicies: {
-    //   Query: {
-    //     fields: {
-    //       findUserByID: (_, { args, toReference }) => toReference({
-    //         __typename: 'User',
-    //         _id: args?.id
-    //       }),
-    //       findTaskByID: (_, { args, toReference }) => toReference({
-    //         __typename: 'Task',
-    //         _id: args?.id
-    //       }),
-    //     }
-    //   }
-    // }
-  });
+  new InMemoryCache(/*{
+    typePolicies: {
+      Query: {
+        fields: {
+          findUserByID: (_, { args, toReference }) => toReference({
+            __typename: 'User',
+            _id: args?.id
+          }),
+          findTaskByID: (_, { args, toReference }) => toReference({
+            __typename: 'Task',
+            _id: args?.id
+          }),
+        }
+      }
+    }
+  }*/);
 
 export const createFaunaApolloClient = (token: string) => new ApolloClient({
   link: createStaticAuthLink(token).concat(httpLink),

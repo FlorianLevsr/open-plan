@@ -4,11 +4,11 @@ import TaskItem from "./task-item";
 
 const TaskList: FC = () => {
 
-  const { allTasks } = useContext(AllTasksContext)
+  const { findUserByID } = useContext(AllTasksContext)
 
   return (
     <ul>
-      {allTasks.data.map(
+      {findUserByID.tasks.data.map(
         task =>
           <li key={task._id}>
             <TaskItem task={task} />
