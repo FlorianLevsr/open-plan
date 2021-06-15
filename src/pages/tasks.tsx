@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { AllTasksContextProvider, AllTasksData, getInitialData } from '../common/context/AllTasksContext/index';
+import { AllTasksContextProvider, TasksByUserData, getInitialData } from '../common/context/AllTasksContext/index';
 import AddTaskForm from '../common/components/elements/AddTaskForm';
 import TaskList from '../common/components/elements/task-list';
 import Layout from '../common/components/layouts/Layout';
@@ -8,7 +8,7 @@ import { GetServerSideProps } from 'next';
 import { User } from '../common/types/fauna';
 
 interface TasksPageProps {
-  initialData: AllTasksData;
+  initialData: TasksByUserData;
   currentUser: User
 }
 
@@ -26,7 +26,7 @@ const TasksPage: FC<TasksPageProps> = ({ initialData, currentUser }) => {
 export const getServerSideProps: GetServerSideProps = getServerSidePropsWithAuthentication({
   callback: async ({ client, currentUser }) => {
     const initialData = await getInitialData(client, currentUser);
-    return { props: { initialData, currentUser }};
+    return { props: { initialData, currentUser } };
   }
 });
 

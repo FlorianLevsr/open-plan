@@ -36,6 +36,7 @@ const LoginPage = () => {
         </label>
         <input type="submit" value="Envoyer" />
       </form>
+
     </Layout>
   );
 }

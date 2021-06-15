@@ -7,13 +7,14 @@ interface TaskItemProps {
 }
 
 const TaskItem: FC<TaskItemProps> = ({ task }) => {
-  const { actions } = useContext(AllTasksContext);
+  const { actions, loading, networkStatus } = useContext(AllTasksContext);
 
   const [renameInput, setRenameInput] = useState<string>("")
 
   const onChangeHandler = (inputvalue: string) => {
     setRenameInput(inputvalue)
   }
+  console.log()
 
   return (
     <>
@@ -22,12 +23,12 @@ const TaskItem: FC<TaskItemProps> = ({ task }) => {
       </h3>
       {task.completed ? 'done' : 'to do'}
       <div>
-        <button onClick={() => actions.deleteTask(task._id)}>Remove</button>
-        <button onClick={() => actions.updateTaskCompleted(task._id, !task.completed)}>{task.completed ? "Undo" : "Complete"}</button>
+        <button disabled={loading.deleteTaskMutationLoading || loading.cacheLoading } onClick={() => actions.deleteTask(task._id)}>Remove</button>
+        <button disabled={loading.updateTaskCompletedMutationLoading || loading.cacheLoading } onClick={() => actions.updateTaskCompleted(task._id, !task.completed)}>{task.completed ? "Undo" : "Complete"}</button>
         <div>
           <p>Rename task:</p>
           <input type="text" value={renameInput} placeholder={task.title} onChange={(event) => onChangeHandler(event.target.value)}></input>
-          <button onClick={() => { actions.updateTaskTitle(task._id, renameInput); setRenameInput(""); }}>Rename</button>
+          <button disabled={loading.updateTaskTitleMutationLoading || loading.cacheLoading } onClick={() => { actions.updateTaskTitle(task._id, renameInput); setRenameInput(""); }}>Rename</button>
         </div>
         
       </div>

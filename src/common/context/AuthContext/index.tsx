@@ -1,4 +1,5 @@
-import { gql } from '@apollo/client/core';
+import React from 'react'
+import { ApolloError, gql } from '@apollo/client/core';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/router';
 import { createContext, FC } from "react";
@@ -27,7 +28,7 @@ export const query = gql`
   }
 `;
 
-const loginQuery = gql`
+export const loginQuery = gql`
   mutation LoginUser($username: String!, $password: String!) {
     loginUser(input: {
       username: $username,
@@ -44,7 +45,7 @@ const logoutQuery = gql`
 
 interface AuthContextValue extends CurrentUserData {
   states: {
-    loading: boolean;
+    loading: boolean
   };
   actions: {
     login: (username: string, password: string) => void;
@@ -56,7 +57,7 @@ interface AuthContextValue extends CurrentUserData {
 export const AuthContext = createContext<AuthContextValue>({
   currentUser: { _id: '', _ts: 0, username: '', tasks: [] },
   states: {
-    loading: false,
+    loading: false
   },
   actions: {
     login: () => undefined,
@@ -67,7 +68,7 @@ export const AuthContext = createContext<AuthContextValue>({
 // creation du provider
 export const AuthContextProvider: FC = ({ children }) => {
   const faunaTokenManager = new FaunaTokenManager();
-  const { loading, error, data, refetch } = useQuery<CurrentUserData>(query);
+  const { loading, error, data, refetch } = useQuery<CurrentUserData>(query, { errorPolicy: 'all' });
 
   const router = useRouter();
 

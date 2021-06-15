@@ -8,7 +8,7 @@ const TaskList: FC = () => {
 
   return (
     <ul>
-      {findUserByID.tasks.data.map(
+      {findUserByID && findUserByID.tasks.data.map(
         task =>
           <li key={task._id}>
             <TaskItem task={task} />
