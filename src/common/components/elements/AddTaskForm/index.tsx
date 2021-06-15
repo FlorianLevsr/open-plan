@@ -1,19 +1,28 @@
-import React, { FC, ChangeEvent, useState, useContext } from 'react';
-import { AllTasksContext } from '../../../context/AllTasksContext/index';
+import React, { FC, ChangeEvent, useState } from 'react';
+import { useAllTasksContext } from '../../../context/AllTasksContext/index';
 
 const AddTaskForm: FC = () => {
   const [newTaskName, setNewTaskName] = useState('');
-  const { actions, loading, networkStatus } = useContext(AllTasksContext);
+  const { actions } = useAllTasksContext();
+  const [createTask, { loading }] = actions.useCreateTask();
 
   return (
     <>
-      {
-        loading.createTaskMutationLoading ? <p>Loading...</p> :
-          <form onSubmit={(event) => { event.preventDefault(); actions.createTask({ title: newTaskName }); }}>
-            <input type="text" placeholder="New task name" value={newTaskName} onChange={(event: ChangeEvent<HTMLInputElement>) => setNewTaskName(event.target.value)} />
-            <button type="submit" disabled={loading.createTaskMutationLoading || loading.cacheLoading }>Add</button>
-          </form>
-      }
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          createTask({ variables: { title: newTaskName } });
+        }}
+      >
+        <input
+          type="text"
+          disabled={loading}
+          placeholder="New task name"
+          value={newTaskName}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setNewTaskName(event.target.value)}
+        />
+        <button type="submit" disabled={loading}>Add</button>
+      </form>
     </>
   );
 }

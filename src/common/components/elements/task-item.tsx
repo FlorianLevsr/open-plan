@@ -1,36 +1,75 @@
-import { FC, useContext, useState } from "react";
-import { AllTasksContext } from "../../context/AllTasksContext/index";
+import { FC, useState } from "react";
+import { useAllTasksContext } from "../../context/AllTasksContext/index";
 import { Task } from "../../types/fauna";
 
 interface TaskItemProps {
   task: Task;
 }
 
-const TaskItem: FC<TaskItemProps> = ({ task }) => {
-  const { actions, loading, networkStatus } = useContext(AllTasksContext);
+const DeleteTaskItemButton: FC<TaskItemProps> = ({ task }) => {
+  const { actions } = useAllTasksContext();
+  const [deleteTask, { loading }] = actions.useDeleteTask();
 
+  return (
+    <button
+      disabled={loading}
+      onClick={() => deleteTask({ variables: { _id: task._id } })}
+    >
+      Remove
+    </button>
+  );
+}
+
+const UpdateTaskCompletedItemButton: FC<TaskItemProps> = ({ task }) => {
+  const { actions } = useAllTasksContext();
+  const [updateTaskCompleted, { loading }] = actions.useUpdateTaskCompleted();
+
+  return (
+    <button
+      disabled={loading}
+      onClick={() => updateTaskCompleted({ variables: { _id: task._id, completed: !task.completed } })}
+    >
+      {task.completed ? "Undo" : "Complete"}
+    </button>
+  );
+}
+
+const RenameTaskItemButton: FC<TaskItemProps> = ({ task }) => {
+  const { actions } = useAllTasksContext();
+  const [updateTaskTitle, { loading }] = actions.useUpdateTaskTitle();
   const [renameInput, setRenameInput] = useState<string>("")
 
   const onChangeHandler = (inputvalue: string) => {
     setRenameInput(inputvalue)
   }
-  console.log()
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        updateTaskTitle({variables: {_id: task._id, title: renameInput }}); 
+        setRenameInput("");
+      }}
+    >
+      <p>Rename task:</p>
+      <input type="text" value={renameInput} placeholder={task.title} onChange={(event) => onChangeHandler(event.target.value)}></input>
+      <button type="submit" disabled={loading}>Rename</button>
+    </form>
+  );
+}
+
+const TaskItem: FC<TaskItemProps> = ({ task }) => {
+  const { actions, loading } = useAllTasksContext();
 
   return (
     <>
       <h3>
         {task.title}
       </h3>
-      {task.completed ? 'done' : 'to do'}
       <div>
-        <button disabled={loading.deleteTaskMutationLoading || loading.cacheLoading } onClick={() => actions.deleteTask(task._id)}>Remove</button>
-        <button disabled={loading.updateTaskCompletedMutationLoading || loading.cacheLoading } onClick={() => actions.updateTaskCompleted(task._id, !task.completed)}>{task.completed ? "Undo" : "Complete"}</button>
-        <div>
-          <p>Rename task:</p>
-          <input type="text" value={renameInput} placeholder={task.title} onChange={(event) => onChangeHandler(event.target.value)}></input>
-          <button disabled={loading.updateTaskTitleMutationLoading || loading.cacheLoading } onClick={() => { actions.updateTaskTitle(task._id, renameInput); setRenameInput(""); }}>Rename</button>
-        </div>
-        
+        <DeleteTaskItemButton task={task} />
+        <UpdateTaskCompletedItemButton task={task} />
+        <RenameTaskItemButton task={task} />
       </div>
     </>
   )
