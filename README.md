@@ -9,10 +9,10 @@
 
 # Installation
 
-## (Dev) Installer FaunaDB en local
+## (Dev) Install FaunaDB locally
 
-- Télécharger et installer Docker: https://docs.docker.com/get-docker/
-- Ouvrir Windows Powershell/un terminal et saisir les commandes suivantes:
+- Download and install Docker: https://docs.docker.com/get-docker/
+- Open a terminal and enter the following commands:
 
 ```
 docker pull fauna/faunadb
@@ -21,11 +21,11 @@ docker run --name faunadb -p 8443:8443 -p 8084:8084 fauna/faunadb
 
 ![windows powershell](https://i.ibb.co/ftNt5nr/faunadocker1.png)
 
-- Une fois le container Docker créé, ouvrir le CLI de FaunaDB.
+- Once the Docker container has been created, open the FaunaDB CLI.
 
 ![docker faunadb cli](https://i.ibb.co/wyTQcmm/faunadocker2.png)
 
-- Saisir les commandes suivante spour créer une database:
+- Entre the following commands in order to create and set up a new database:
 
 ```
 fauna add-endpoint http://localhost:8443/ --alias localhost --key secret
@@ -33,121 +33,121 @@ fauna create-database development_db --endpoint=localhost
 fauna create-key development_db --endpoint=localhost
 ```
 
-- Récupérer la ```FAUNADB_KEY``` (clé d'accès à la DB/clé administrateur) générée lors de la dernière commande saisie. 
+- Save the ```FAUNADB_KEY``` generated.
 
 
-> Plus d'informations sur la procédure d'installation et source:
+> More informations on how to install locally a faunadb server & credits:
 > https://dev.to/englishcraig/how-to-set-up-faunadb-for-local-development-5ha7
 
 <hr/>
 
-## (Prod) Créer un compte FaunaDB
+## (Prod) Create a FaunaDB account
 
-- Se rendre sur: https://fauna.com/
+- Go to: https://fauna.com/
 
-- Se connecter
+- Log in
 
-- Créer une database
+- Create a database
 
 ![FaunaDB - Création d'une database](https://i.ibb.co/z2TW36C/fauna13.png)
 
-- Se rendre dans l'onglet Security et générer une clé d'accès
+- Go to the Security tab and create a new key
 
 ![FaunaDB - Générer une clé](https://i.ibb.co/qRQGmy0/fauna3.png)
 
-> Plus d'informations sur la procédure de création:
+> More informations:
 > https://docs.fauna.com/fauna/current/start/index.html
 
-## Récupérer et mettre en place le projet
+## Clone and set up the project
 
-- Récupérer le projet à l'aide de la commande suivante:
+- Clone the project thanks to the following command:
 
 ```
 git clone [https ou ssh url, selon configuration]
 ```
 
-- Une fois le projet récupérer, installer les dépendences nécessaires à l'application:
+- Once the project has been cloned, install all the needed dependencies:
 
 ```
 yarn install
 ```
 
-- Une fois les dépendences installées, créer deux fichiers ```.env``` et ```.env.local``` à la racine du projet.
+- Create two files named ```.env``` and ```.env.local``` in the root directory.
 
-- Deux fichiers ```.env.example``` et ```.env.local.example``` sont fournis et disponible à la racine du projet. Copier-coller leurs contenus.
+- Two files ```.env.example``` et ```.env.local.example``` are provided, copy and paste their content.
 
 <hr />
 
-### (1) Si FaunaDB est installé localement
+### (1) If FaunaDB is locally installed
 
-- Renseigner dans le fichier ```.env```
+- Put the following in your ```.env``` file:
 
 ```
-FAUNA_SECRET_ADMIN=clé secrète générée lors de la création de la database
+FAUNA_SECRET_ADMIN=secret key generated while configuring the db
 NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN=http://localhost:8084
 FAUNA_DOMAIN=http://localhost:8443
 ```
 
-- Renseigner dans le fichier ```.env.local```
+- Then, put the following in your ```.env.local``` file:
 
 ```
-FAUNA_SECRET_ADMIN=clé secrète générée lors de la création de la database
+FAUNA_SECRET_ADMIN=secret key generated while configuring the db
 NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN=http://localhost:8084
 FAUNA_DOMAIN=http://localhost:8443
 ```
 
-### (2) Si un compte FaunaDB est utilisé (serverless)
+### (2) If a FaunaDB account is used (serverless)
 
-- Renseigner dans le fichier ```.env```
+- Put the following in your ```.env``` file:
 
 ```
-FAUNA_SECRET_ADMIN=clé secrète générée dans l'onglet Security
+FAUNA_SECRET_ADMIN=secret key generated in the Security tab
 NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN=https://graphql.fauna.com
 FAUNA_DOMAIN=https://graphql.fauna.com
 ```
 
-- Renseigner dans le fichier ```.env.local```
+- Then, put the following in your ```.env.local``` file:
 
 ```
-FAUNA_SECRET_ADMIN=clé secrète générée dans l'onglet Security
+FAUNA_SECRET_ADMIN=secret key generated in the Security tab
 NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN=https://graphql.fauna.com
 FAUNA_DOMAIN=https://graphql.fauna.com
 ```
 
 <hr />
 
-## Mise en place du projet (suite)
+## Project configuration 
 
-- Executer la commande suivante:
+- Run:
 
 ```
 yarn schema-import
 ```
 
-- Récupérer la clé générée:
+- Save the generated key:
 
 ![clé user](https://i.ibb.co/k1krw9K/projetconfig1.png)
 
 
-- Placer cette clé dans le fichier ```.env.local``` précédement créé en ajoutant la ligne suivante:
+- Put the generated key in your ```.env.local``` file:
 
 ```
-NEXT_PUBLIC_FAUNA_SECRET=la clé générée par la commande yarn schema-import
+NEXT_PUBLIC_FAUNA_SECRET=generated key obtained by running yarn schema-import
 ```
 
-- Executer ensuite la commande suivante pour remplir la base de données avec des données factices:
+- Then run the following command in order to put some false data into the db:
 
 ```
 yarn fixtures
 ```
 
-- Enfin, executer la commande suivante:
+- Finally, run:
 
 ```
 yarn dev
 ```
 
-Et se rendre à l'adresse [http://localhost:3000](http://localhost:3000)
+And go to [http://localhost:3000](http://localhost:3000) to see the result!
 
 ![todolist](https://i.ibb.co/c1hTCmn/projetconfig2.png)
 
