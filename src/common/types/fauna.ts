@@ -1,23 +1,23 @@
 export interface FaunaId {
-  _id: string;
+  _id: string
 }
 
 export interface FaunaEntity extends FaunaId {
-  _ts: number;
+  _ts: number
 }
 
 export interface FaunaPage<T> {
-  data: T[];
-  after?: string;
-  before?: string;
+  data: T[]
+  after?: string
+  before?: string
 }
 
 export interface User extends FaunaEntity {
-  username: string;
-  tasks: Task[];
+  username: string
+  tasks: Task[]
 }
 
 export interface Task extends FaunaEntity {
-  title: string;
-  completed?: boolean;
+  title: string
+  completed?: boolean
 }

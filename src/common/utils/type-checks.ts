@@ -1,16 +1,16 @@
 export const checkDefined = <T = unknown>(item?: T): T => {
   if (typeof item === 'undefined') {
-    throw new Error('A variable should not be undefined.');
+    throw new Error('A variable should not be undefined.')
   }
 
-  return item;
+  return item
 }
 
 export const checkDefinedNotNull = <T = unknown>(item?: T): T => {
-  const definedItem = checkDefined(item);
+  const definedItem = checkDefined(item)
   if (definedItem === null) {
-    throw new Error('A variable should not be null.');
+    throw new Error('A variable should not be null.')
   }
 
-  return definedItem;
+  return definedItem
 }

@@ -1,4 +1,4 @@
 // require('jest-fetch-mock').enableMocks()
-import JestFetchMock from 'jest-fetch-mock';
+import JestFetchMock from 'jest-fetch-mock'
 
-JestFetchMock.enableMocks();
+JestFetchMock.enableMocks()
