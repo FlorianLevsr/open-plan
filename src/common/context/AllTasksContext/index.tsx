@@ -1,9 +1,9 @@
-import React, { createContext, FC } from "react";
-import { gql, useQuery, useMutation, ApolloClient, NormalizedCacheObject } from '@apollo/client';
+import React, { createContext, FC, useContext } from "react";
+import { gql, useQuery, useMutation, ApolloClient, NormalizedCacheObject, MutationTuple } from '@apollo/client';
 import { FaunaId, Task, User } from "../../types/fauna";
 
 // Describe query data structure
-export interface AllTasksData {
+export interface TasksByUserData {
   findUserByID: {
     _id: String
     tasks: {
@@ -23,21 +23,9 @@ interface DeleteTaskData {
 /**
  * SECTION GraphQL queries
  */
-// Describe data to query from the API
-export const query = gql`
-  query AllTasksQuery {
-    allTasks {
-      data {
-        _id
-        title
-        completed
-      }
-    }
-  }
-`;
 
-// TEST // Describe tasks by user
-export const testQuery = gql`
+// Describe tasks by user query
+export const query = gql`
   query FindUserByID($_id: ID!) {
     findUserByID(id: $_id) {
       _id
@@ -62,8 +50,6 @@ const createQuery = gql`
     }
   }
 `;
-
-
 
 // Describe update task title query
 const updateTitleQuery = gql`
@@ -107,38 +93,37 @@ const deleteQuery = gql`
 
 export const getInitialData = async (client: ApolloClient<NormalizedCacheObject>, currentUser: User | undefined | null) => {
   if (typeof currentUser !== undefined) {
-    const { data, errors } = await client.query<AllTasksData>({ query: testQuery, variables: { _id: currentUser?._id } });
+    const { data, errors } = await client.query<TasksByUserData>({ query: query, variables: { _id: currentUser?._id } });
     if (errors) throw errors[0];
     return data;
   }
   throw new Error('No user found')
 }
 
-interface AllTasksContextValue extends AllTasksData {
+interface AllTasksContextValue extends TasksByUserData {
+  loading: boolean,
   actions: {
-    createTask: (task: Partial<Task>) => void;
-    updateTaskCompleted: (id: string, completed: boolean) => void;
-    updateTaskTitle: (id: string, title: string) => void;
-    deleteTask: (id: string) => void;
+    useCreateTask: () => MutationTuple<CreateTaskData, Partial<Task>>;
+    useUpdateTaskCompleted: () => MutationTuple<CreateTaskData, Partial<Task>>;
+    useUpdateTaskTitle: () => MutationTuple<CreateTaskData, Partial<Task>>;
+    useDeleteTask: () => MutationTuple<DeleteTaskData, FaunaId>;
   }
 }
 
-export const AllTasksContext = createContext<AllTasksContextValue>({
-  findUserByID: { _id: '', tasks: { data: [] } },
-  actions: {
-    createTask: () => undefined,
-    updateTaskCompleted: () => undefined,
-    updateTaskTitle: () => undefined,
-    deleteTask: () => undefined,
+export const AllTasksContext = createContext<AllTasksContextValue | undefined>(undefined);
+
+export const useAllTasksContext = () => {
+  const contextIsDefined = useContext(AllTasksContext);
+  if (typeof contextIsDefined === 'undefined') {
+    throw new Error('AllTasksContext should not be undefined. Did you forget yo wrap your component inside a Provider?');
   }
-});
+  return contextIsDefined;
+}
 
 interface AllTasksContextProviderProps {
-  initialData: AllTasksData;
+  initialData: TasksByUserData;
   currentUser: User
 }
-
-
 
 export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ children, initialData, currentUser }) => {
   /**
@@ -148,60 +133,70 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({ chil
 
   let _id = currentUser._id;
 
-  const { loading, error, data: queryData } = useQuery<AllTasksData>(testQuery, { variables: { _id } });
+  const { loading, data: queryData, networkStatus } = useQuery<TasksByUserData>(query, { variables: { _id } });
 
   // ANCHOR Mutation which allows to create a new item
-  const [createTaskMutation] = useMutation<CreateTaskData, Partial<Task>>(createQuery, {
-    update: (cache, { data }) => {
-      if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { _id }});
-      if (!existingTasks) throw new Error('Pouet Pouet');
-      cache.writeQuery({
-        query: testQuery, variables: { _id }, data: {
-          findUserByID: { tasks: { data: [...existingTasks.findUserByID.tasks.data, data.createTask] } }
-        }
-      });
-    }
-  });
+  const useCreateTask = () => (
+    useMutation<CreateTaskData, Partial<Task>>(createQuery, {
+      update: (cache, { data }) => {
+        if (!data) throw new Error('Pouet');
+        const existingTasks = cache.readQuery<TasksByUserData>({ query: query, variables: { _id } });
+        if (!existingTasks) throw new Error('Pouet Pouet');
+        cache.writeQuery({
+          query: query, variables: { _id }, data: {
+            findUserByID: { tasks: { data: [...existingTasks.findUserByID.tasks.data, data.createTask] } }
+          }
+        });
+      }
+    })
+  );
 
-  const [updateTaskCompletedMutation] = useMutation<CreateTaskData, Partial<Task>>(updateCompletedQuery);
+  const useUpdateTaskCompleted = () => (
+    useMutation<CreateTaskData, Partial<Task>>(updateCompletedQuery)
+  );
 
-  const [updateTaskTitleMutation] = useMutation<CreateTaskData, Partial<Task>>(updateTitleQuery);
+  const useUpdateTaskTitle = () => (
+    useMutation<CreateTaskData, Partial<Task>>(updateTitleQuery)
+  );
 
-  const [deleteTaskMutation] = useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
-    update: (cache, { data }) => {
-      if (!data) throw new Error('Pouet');
-      const existingTasks = cache.readQuery<AllTasksData>({ query: testQuery, variables: { _id } });
-      if (!existingTasks) throw new Error('Pouet');
-      cache.writeQuery({
-        query: testQuery, variables: { _id },  data: {
-          findUserByID: {
-            tasks: {
-              data: existingTasks.findUserByID.tasks.data.filter(
-                task => task._id !== data.deleteTask._id
-              )
+  const useDeleteTask = () => (
+    useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
+      update: (cache, { data }) => {
+        if (!data) throw new Error('Pouet');
+        const existingTasks = cache.readQuery<TasksByUserData>({ query: query, variables: { _id } });
+        if (!existingTasks) throw new Error('Pouet');
+        cache.writeQuery({
+          query: query, variables: { _id }, data: {
+            findUserByID: {
+              tasks: {
+                data: existingTasks.findUserByID.tasks.data.filter(
+                  task => task._id !== data.deleteTask._id
+                )
+              }
             }
           }
-        }
-      });
-    }
-  });
+        });
+      }
+    })
+  );
+
   /**
    * !SECTION
    */
 
-  
   // If query hasn't returned a result yet, use initial data
   const data = queryData || initialData;
 
   // ANCHOR Pack data and actions to dispatch through components
   const value = {
     ...data,
+    networkStatus,
+    loading,
     actions: {
-      createTask: (task: Partial<Task>) => { createTaskMutation({ variables: { ...task } }); },
-      updateTaskCompleted: (_id: string, completed: boolean) => { updateTaskCompletedMutation({ variables: { _id, completed } }); },
-      updateTaskTitle: (_id: string, title: string) => { updateTaskTitleMutation({ variables: { _id, title } }); },
-      deleteTask: (_id: string) => { deleteTaskMutation({ variables: { _id } }); },
+      useCreateTask,
+      useUpdateTaskCompleted,
+      useUpdateTaskTitle,
+      useDeleteTask,
     }
   }
 

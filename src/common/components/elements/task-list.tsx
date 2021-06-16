@@ -1,20 +1,21 @@
 import { FC, useContext } from "react";
 import { AllTasksContext } from "../../context/AllTasksContext/index";
 import TaskItem from "./task-item";
+import { List, ListItem, ListIcon, OrderedList, UnorderedList } from "@chakra-ui/react"
 
 const TaskList: FC = () => {
 
   const { findUserByID } = useContext(AllTasksContext)
 
   return (
-    <ul>
-      {findUserByID.tasks.data.map(
+    <List>
+      {findUserByID && findUserByID.tasks.data.map(
         task =>
-          <li key={task._id}>
+          <ListItem key={task._id}>
             <TaskItem task={task} />
-          </li>
+          </ListItem>
       )}
-    </ul>
+    </List>
   );
 }
 

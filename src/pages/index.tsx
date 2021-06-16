@@ -6,7 +6,6 @@ const IndexPage: FC = () => {
 
   return (
     <Layout>
-      <div>blabla</div>
     </Layout>
   );
 }
