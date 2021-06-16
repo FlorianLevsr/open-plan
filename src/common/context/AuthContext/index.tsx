@@ -42,7 +42,7 @@ const logoutQuery = gql`
 
 interface AuthContextValue extends CurrentUserData {
   states: {
-    loading: boolean
+    mutationLoading: boolean
   }
   actions: {
     login: (username: string, password: string) => void
@@ -54,7 +54,7 @@ interface AuthContextValue extends CurrentUserData {
 export const AuthContext = createContext<AuthContextValue>({
   currentUser: { _id: '', _ts: 0, username: '', tasks: [] },
   states: {
-    loading: false,
+    mutationLoading: false,
   },
   actions: {
     login: () => undefined,
@@ -71,7 +71,7 @@ export const AuthContextProvider: FC = ({ children }) => {
 
   const router = useRouter()
 
-  const [loginMutation] = useMutation<LoginData, LoginInput>(loginQuery, {
+  const [loginMutation, { loading: mutationLoading}] = useMutation<LoginData, LoginInput>(loginQuery, {
     onCompleted: (data) => {
       faunaTokenManager.set(data.loginUser)
       refetch()
@@ -87,7 +87,7 @@ export const AuthContextProvider: FC = ({ children }) => {
 
   let value = {
     states: {
-      loading,
+      mutationLoading,
     },
     actions: {
       login: (username: string, password: string) =>

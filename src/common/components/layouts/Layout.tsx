@@ -16,15 +16,15 @@ import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
 const AuthBar: FC = () => {
   const { currentUser, states, actions } = useContext(AuthContext)
 
-  if (states.loading) {
+  /*if (states.mutationLoading) {
     return <div>Loading...</div>
-  }
+  }*/
 
   if (currentUser) {
     return (
       <HStack>
         <Text fontSize="sm">Bienvenue {currentUser.username}</Text>
-        <Button colorScheme="teal" size="sm" onClick={() => actions.logout()}>
+        <Button colorScheme="teal" size="sm" isLoading={states.mutationLoading} onClick={() => actions.logout()}>
           <LockIcon mr={1} /> Logout
         </Button>
       </HStack>
@@ -33,7 +33,7 @@ const AuthBar: FC = () => {
 
   return (
     <Link as={NextLink} href="/login">
-      <Button colorScheme="teal" size="sm">
+      <Button colorScheme="teal" size="sm" isLoading={states.mutationLoading}>
         <UnlockIcon mr={1} /> Login
       </Button>
     </Link>
