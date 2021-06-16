@@ -1,5 +1,4 @@
 import { ChangeEvent, MouseEvent, FC, useState } from 'react'
-import { useAllTasksContext } from '../../context/AllTasksContext/index'
 import { Task } from '../../types/fauna'
 import {
   FormControl,
@@ -18,6 +17,7 @@ import {
   EditIcon,
 } from '@chakra-ui/icons'
 import { ReactNode } from 'react'
+import { useAllTasksContext } from '../../data/all-tasks'
 
 interface TaskItemProps {
   task: Task

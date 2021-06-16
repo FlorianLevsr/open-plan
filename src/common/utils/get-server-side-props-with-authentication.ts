@@ -1,10 +1,10 @@
 import { GetServerSideProps, GetServerSidePropsResult } from 'next'
 import { createFaunaApolloClient } from './fauna-apollo-client'
-import { CurrentUserData, query } from '../context/AuthContext'
 import FaunaTokenManager from './fauna-token-manager'
 import * as cookie from 'cookie'
 import { User } from '../types/fauna'
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client/core'
+import { CurrentUserData, query } from '../data/auth'
 
 interface GetServerSidePropsCallbackParameters {
   client: ApolloClient<NormalizedCacheObject>

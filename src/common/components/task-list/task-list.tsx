@@ -1,7 +1,7 @@
-import { FC } from 'react'
-import { useAllTasksContext } from '../../context/AllTasksContext/index'
-import TaskItem from './task-item'
+import React, { FC } from 'react'
 import { List, ListItem } from '@chakra-ui/react'
+import { useAllTasksContext } from '../../data/all-tasks'
+import TaskItem from './task-item'
 
 const TaskList: FC = () => {
   const { findUserByID } = useAllTasksContext()

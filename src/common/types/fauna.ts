@@ -21,3 +21,10 @@ export interface Task extends FaunaEntity {
   title: string
   completed?: boolean
 }
+
+export interface NewTaskInput {
+  title?: string
+  completed?: boolean
+}
+
+export type ExistingTaskInput = NewTaskInput | FaunaId

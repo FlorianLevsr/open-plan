@@ -1,53 +1,83 @@
-import React, { FormEvent, useContext, useState } from 'react';
-import { AuthContext } from '../common/context/AuthContext';
-import { useRouter } from 'next/router';
-import Layout from '../common/components/layouts/Layout';
-import { GetServerSideProps } from 'next';
-import getServerSidePropsWithAuthentication from '../common/utils/get-server-side-props-with-authentication';
-import { FormControl, FormLabel, Button, Input, Center } from "@chakra-ui/react"
+import React, { ChangeEvent, FormEvent, useState } from 'react'
+import { useRouter } from 'next/router'
+import { GetServerSideProps, NextPage } from 'next'
+import { FormControl, FormLabel, Button, Input, Center } from '@chakra-ui/react'
+import { Layout } from '../common/components/layouts'
+import { useAuthContext } from '../common/data/auth'
+import { getServerSidePropsWithAuthentication } from '../common/utils'
 
+type LoginFormInputType = 'username' | 'password'
 
-const LoginPage = () => {
-  const router = useRouter();
-  const { actions, states } = useContext(AuthContext);
-  const [formData, setFormData] = useState({ username: '', password: '' });
+type LoginFormData = Record<LoginFormInputType, string>
 
-  const onchangeHandler = (inputName: string, inputValue: string) => {
+const LoginPage: NextPage = () => {
+  const router = useRouter()
+  const { actions, states } = useAuthContext()
+  const [formData, setFormData] = useState<LoginFormData>({
+    username: '',
+    password: '',
+  })
+
+  const onChangeHandler = (
+    inputName: LoginFormInputType,
+    inputValue: string
+  ): void => {
     const newFormData = { ...formData, [inputName]: inputValue }
     setFormData(newFormData)
-  };
+  }
 
-  const onSubmitHandler = async (event: FormEvent) => {
-    event.preventDefault();
-    const { username, password } = formData;
-    await actions.login(username, password);
-    router.push('/tasks');
-  };
+  const onSubmitHandler = async (event: FormEvent): Promise<void> => {
+    event.preventDefault()
+    const { username, password } = formData
+    await actions.login(username, password)
+    router.push('/tasks')
+  }
 
   return (
     <Layout>
       <form>
-      <FormControl>
-        <FormLabel>
-          Username :
-          <Input type="text" name="username" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
-        </FormLabel>
-        <FormLabel>
-          Password :
-          <Input type="text" name="password" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
-        </FormLabel>
-        <Center>
-          <Button isLoading={states.mutationLoading} type="submit" bg="teal" color="white" onClick={(event) => onSubmitHandler(event)} >Log in</Button>
-        </Center>
-      </FormControl>
+        <FormControl>
+          <FormLabel>
+            Username :
+            <Input
+              type="text"
+              name="username"
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                onChangeHandler('username', event.target.value)
+              }
+            />
+          </FormLabel>
+          <FormLabel>
+            Password :
+            <Input
+              type="text"
+              name="password"
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                onChangeHandler('password', event.target.value)
+              }
+            />
+          </FormLabel>
+          <Center>
+            <Button
+              isLoading={states.mutationLoading}
+              type="submit"
+              bg="teal"
+              color="white"
+              onClick={(event) => onSubmitHandler(event)}
+            >
+              Log in
+            </Button>
+          </Center>
+        </FormControl>
       </form>
     </Layout>
-  );
+  )
 }
 
-export const getServerSideProps: GetServerSideProps = getServerSidePropsWithAuthentication({
-  redirectOnAuthenticated: true,
-  destination: '/tasks',
-});
+export const getServerSideProps: GetServerSideProps =
+  getServerSidePropsWithAuthentication({
+    redirectOnAuthenticated: true,
+    destination: '/tasks',
+  })
 
-export default LoginPage;
+export default LoginPage

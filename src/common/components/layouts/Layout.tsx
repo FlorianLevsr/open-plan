@@ -1,6 +1,5 @@
-import React, { FC, useContext } from 'react'
+import React, { FC } from 'react'
 import NextLink from 'next/link'
-import { AuthContext } from '../../context/AuthContext'
 import {
   HStack,
   Box,
@@ -12,19 +11,21 @@ import {
   Container,
 } from '@chakra-ui/react'
 import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
+import { useAuthContext } from '../../data/auth'
 
 const AuthBar: FC = () => {
-  const { currentUser, states, actions } = useContext(AuthContext)
-
-  /*if (states.mutationLoading) {
-    return <div>Loading...</div>
-  }*/
+  const { currentUser, states, actions } = useAuthContext()
 
   if (currentUser) {
     return (
       <HStack>
         <Text fontSize="sm">Bienvenue {currentUser.username}</Text>
-        <Button colorScheme="teal" size="sm" isLoading={states.mutationLoading} onClick={() => actions.logout()}>
+        <Button
+          colorScheme="teal"
+          size="sm"
+          isLoading={states.mutationLoading}
+          onClick={() => actions.logout()}
+        >
           <LockIcon mr={1} /> Logout
         </Button>
       </HStack>
@@ -41,7 +42,7 @@ const AuthBar: FC = () => {
 }
 
 const Layout: FC = ({ children }) => {
-  const { currentUser } = useContext(AuthContext)
+  const { currentUser } = useAuthContext()
 
   return (
     <div>

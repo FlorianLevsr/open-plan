@@ -1,22 +1,21 @@
-import React, { FC } from 'react'
-import {
-  AllTasksContextProvider,
-  TasksByUserData,
-  getInitialData,
-} from '../common/context/AllTasksContext/index'
-import AddTaskForm from '../common/components/elements/AddTaskForm'
-import TaskList from '../common/components/elements/task-list'
-import Layout from '../common/components/layouts/Layout'
-import getServerSidePropsWithAuthentication from '../common/utils/get-server-side-props-with-authentication'
-import { GetServerSideProps } from 'next'
+import React from 'react'
+import { GetServerSideProps, NextPage } from 'next'
 import { User } from '../common/types/fauna'
+import { TaskList, AddTaskForm } from '../common/components'
+import { Layout } from '../common/components/layouts'
+import {
+  TasksByUserData,
+  AllTasksContextProvider,
+  getInitialData,
+} from '../common/data/all-tasks'
+import { getServerSidePropsWithAuthentication } from '../common/utils'
 
 interface TasksPageProps {
   initialData: TasksByUserData
   currentUser: User
 }
 
-const TasksPage: FC<TasksPageProps> = ({ initialData, currentUser }) => {
+const TasksPage: NextPage<TasksPageProps> = ({ initialData, currentUser }) => {
   return (
     <Layout>
       <AllTasksContextProvider

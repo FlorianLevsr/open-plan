@@ -7,9 +7,15 @@ import {
   NormalizedCacheObject,
   MutationTuple,
 } from '@apollo/client'
-import { FaunaId, Task, User } from '../../types/fauna'
+import { FaunaId, Task, User } from '../types/fauna'
+import { ExistingTaskInput, NewTaskInput } from '../types/fauna'
+import { checkDefined, checkDefinedNotNull } from '../utils/type-checks'
 
-// Describe query data structure
+/**
+ * SECTION Interfaces
+ */
+
+// ANCHOR Query data structure
 export interface TasksByUserData {
   findUserByID: {
     _id: string
@@ -19,19 +25,24 @@ export interface TasksByUserData {
   }
 }
 
+// ANCHOR Create and update mutation return data structure
 interface CreateTaskData {
   createTask: Task
 }
 
+// ANCHOR Delete mutation return data structure
 interface DeleteTaskData {
   deleteTask: FaunaId
 }
+/**
+ * !SECTION
+ */
 
 /**
  * SECTION GraphQL queries
  */
 
-// Describe tasks by user query
+// ANCHOR Describe query
 export const query = gql`
   query FindUserByID($_id: ID!) {
     findUserByID(id: $_id) {
@@ -47,7 +58,7 @@ export const query = gql`
   }
 `
 
-// Describe create query
+// ANCHOR Describe create query
 const createQuery = gql`
   mutation createTask($title: String!) {
     createTask(input: { title: $title }) {
@@ -58,7 +69,7 @@ const createQuery = gql`
   }
 `
 
-// Describe update task title query
+// ANCHOR Describe update task title query
 const updateTitleQuery = gql`
   mutation updateTaskTitle($_id: ID!, $title: String!) {
     updateTaskTitle(input: { id: $_id, title: $title }) {
@@ -69,7 +80,7 @@ const updateTitleQuery = gql`
   }
 `
 
-// Describe update task completed query
+// ANCHOR Describe update task completed query
 const updateCompletedQuery = gql`
   mutation updateTaskCompleted($_id: ID!, $completed: Boolean!) {
     updateTaskCompleted(input: { id: $_id, completed: $completed }) {
@@ -80,7 +91,7 @@ const updateCompletedQuery = gql`
   }
 `
 
-// Describe delete query
+// ANCHOR Describe delete query
 const deleteQuery = gql`
   mutation deleteTask($_id: ID!) {
     deleteTask(id: $_id) {
@@ -92,6 +103,7 @@ const deleteQuery = gql`
  * !SECTION
  */
 
+// ANCHOR Get initial data in server-side
 export const getInitialData = async (
   client: ApolloClient<NormalizedCacheObject>,
   currentUser: User | undefined | null
@@ -107,6 +119,11 @@ export const getInitialData = async (
   throw new Error('No user found')
 }
 
+/**
+ * SECTION Context
+ */
+
+// ANCHOR Context value structure
 interface AllTasksContextValue extends TasksByUserData {
   loading: boolean
   actions: {
@@ -117,20 +134,19 @@ interface AllTasksContextValue extends TasksByUserData {
   }
 }
 
+// ANCHOR Context creation
 export const AllTasksContext = createContext<AllTasksContextValue | undefined>(
   undefined
 )
 
-export const useAllTasksContext = (): AllTasksContextValue => {
-  const contextIsDefined = useContext(AllTasksContext)
-  if (typeof contextIsDefined === 'undefined') {
-    throw new Error(
-      'AllTasksContext should not be undefined. Did you forget yo wrap your component inside a Provider?'
-    )
-  }
-  return contextIsDefined
-}
+// ANCHOR Use Context hook
+export const useAllTasksContext = (): AllTasksContextValue =>
+  checkDefined(
+    useContext(AllTasksContext),
+    'AllTasksContext should not be undefined. Did you forget yo wrap your component inside a Provider?'
+  )
 
+// ANCHOR Context provider
 interface AllTasksContextProviderProps {
   initialData: TasksByUserData
   currentUser: User
@@ -144,8 +160,8 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
   /**
    * SECTION Apollo hooks
    */
-  // ANCHOR Send request using Apollo client to revalidate initial data
 
+  // ANCHOR Send request using Apollo client to revalidate initial data
   const _id = currentUser._id
 
   const {
@@ -155,15 +171,20 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
   } = useQuery<TasksByUserData>(query, { variables: { _id } })
 
   // ANCHOR Mutation which allows to create a new item
-  const useCreateTask = (): MutationTuple<CreateTaskData, Partial<Task>> =>
-    useMutation<CreateTaskData, Partial<Task>>(createQuery, {
+  const useCreateTask = (): MutationTuple<CreateTaskData, NewTaskInput> =>
+    useMutation<CreateTaskData, NewTaskInput>(createQuery, {
       update: (cache, { data }) => {
-        if (!data) throw new Error('Pouet')
-        const existingTasks = cache.readQuery<TasksByUserData>({
-          query: query,
-          variables: { _id },
-        })
-        if (!existingTasks) throw new Error('Pouet Pouet')
+        const definedData = checkDefinedNotNull(
+          data,
+          'Returned data should not be null or undefined in the create task callback.'
+        )
+        const existingTasks = checkDefinedNotNull(
+          cache.readQuery<TasksByUserData>({
+            query: query,
+            variables: { _id },
+          }),
+          'Existing data should not be null or undefined in the create task callback.'
+        )
         cache.writeQuery({
           query: query,
           variables: { _id },
@@ -172,7 +193,7 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
               tasks: {
                 data: [
                   ...existingTasks.findUserByID.tasks.data,
-                  data.createTask,
+                  definedData.createTask,
                 ],
               },
             },
@@ -181,22 +202,32 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
       },
     })
 
+  // ANCHOR Mutations which allows to update an existing item's property
   const useUpdateTaskCompleted = (): MutationTuple<
     CreateTaskData,
-    Partial<Task>
-  > => useMutation<CreateTaskData, Partial<Task>>(updateCompletedQuery)
+    ExistingTaskInput
+  > => useMutation<CreateTaskData, ExistingTaskInput>(updateCompletedQuery)
 
-  const useUpdateTaskTitle = (): MutationTuple<CreateTaskData, Partial<Task>> =>
-    useMutation<CreateTaskData, Partial<Task>>(updateTitleQuery)
+  const useUpdateTaskTitle = (): MutationTuple<
+    CreateTaskData,
+    ExistingTaskInput
+  > => useMutation<CreateTaskData, ExistingTaskInput>(updateTitleQuery)
 
+  // ANCHOR Mutations which allows to delete an existing item
   const useDeleteTask = (): MutationTuple<DeleteTaskData, FaunaId> =>
     useMutation<DeleteTaskData, FaunaId>(deleteQuery, {
       update: (cache, { data }) => {
-        if (!data) throw new Error('Pouet')
-        const existingTasks = cache.readQuery<TasksByUserData>({
-          query: query,
-          variables: { _id },
-        })
+        const definedData = checkDefinedNotNull(
+          data,
+          'Returned data should not be null or undefined in the create task callback.'
+        )
+        const existingTasks = checkDefinedNotNull(
+          cache.readQuery<TasksByUserData>({
+            query: query,
+            variables: { _id },
+          }),
+          'Existing data should not be null or undefined in the create task callback.'
+        )
         if (!existingTasks) throw new Error('Pouet')
         cache.writeQuery({
           query: query,
@@ -205,7 +236,7 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
             findUserByID: {
               tasks: {
                 data: existingTasks.findUserByID.tasks.data.filter(
-                  (task) => task._id !== data.deleteTask._id
+                  (task) => task._id !== definedData.deleteTask._id
                 ),
               },
             },
@@ -213,7 +244,6 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
         })
       },
     })
-
   /**
    * !SECTION
    */
@@ -241,3 +271,6 @@ export const AllTasksContextProvider: FC<AllTasksContextProviderProps> = ({
     </AllTasksContext.Provider>
   )
 }
+/**
+ * !SECTION
+ */
