@@ -1,5 +1,7 @@
 import React, { FC, ChangeEvent, useState } from 'react';
 import { useAllTasksContext } from '../../../context/AllTasksContext/index';
+import { FormControl, Input, Button, Box, HStack } from "@chakra-ui/react"
+import { SmallAddIcon } from '@chakra-ui/icons';
 
 const AddTaskForm: FC = () => {
   const [newTaskName, setNewTaskName] = useState('');
@@ -7,23 +9,29 @@ const AddTaskForm: FC = () => {
   const [createTask, { loading }] = actions.useCreateTask();
 
   return (
-    <>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          createTask({ variables: { title: newTaskName } });
-        }}
-      >
-        <input
-          type="text"
-          disabled={loading}
-          placeholder="New task name"
-          value={newTaskName}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setNewTaskName(event.target.value)}
-        />
-        <button type="submit" disabled={loading}>Add</button>
-      </form>
-    </>
+    <Box m="2">
+      <FormControl p="2">
+        <HStack>
+          <Input
+            type="text"
+            disabled={loading}
+            placeholder="New task name"
+            value={newTaskName}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setNewTaskName(event.target.value)}
+          />
+          <Button
+            type="submit"
+            disabled={loading}
+            onClick={(event) => {
+              event.preventDefault();
+              createTask({ variables: { title: newTaskName } });
+            }}
+          >
+            <SmallAddIcon />
+          </Button>
+        </HStack>
+      </FormControl>
+    </Box>
   );
 }
 

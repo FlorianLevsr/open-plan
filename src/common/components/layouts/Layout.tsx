@@ -1,6 +1,8 @@
 import React, { FC, ReactNode, useContext } from 'react'
-import Link from 'next/link'
+import NextLink from 'next/link'
 import { AuthContext } from '../../context/AuthContext'
+import { HStack, Box, Link, Button, Text, Flex, Spacer, Container } from "@chakra-ui/react"
+import { LockIcon, UnlockIcon } from '@chakra-ui/icons';
 
 const AuthBar: FC = ({ }) => {
   const { currentUser, states, actions } = useContext(AuthContext);
@@ -8,19 +10,30 @@ const AuthBar: FC = ({ }) => {
   if (states.loading) {
     return <div>Loading...</div>;
   }
-  
+
   if (currentUser) {
     return (
-      <div>
-        <div>Bienvenue {currentUser.username}</div>
-        <button onClick={() => actions.logout()}>Logout</button>
-      </div>
+      <HStack>
+        <Text fontSize="sm">Bienvenue {currentUser.username}</Text>
+        <Button
+          colorScheme="teal"
+          size="sm"
+          onClick={() => actions.logout()}
+        >
+          <LockIcon mr={1} /> Logout
+        </Button>
+      </HStack>
     );
   }
-  
+
   return (
-    <Link href="/login">
-      <a>Login</a>
+    <Link as={NextLink} href="/login">
+      <Button
+        colorScheme="teal"
+        size="sm"
+      >
+        <UnlockIcon mr={1} /> Login
+      </Button>
     </Link>
   );
 }
@@ -35,27 +48,29 @@ const Layout = ({ children }: Props) => {
 
   return (
     <div>
-      <header>
-        <nav>
-          <Link href="/">
-            <a>Home</a>
-          </Link>
-          {
-            currentUser &&
-            <Link href="/tasks">
-              <a>Tasks list</a>
-            </Link>
-          }
+      <Box as="header" bg="purple.500" color="white" p={4} mb={4}>
+        <Flex>
+          <HStack as="nav" spacing="1em">
+            <Box>
+              <Link as={NextLink} href="/">Home</Link>
+            </Box>
+            {
+              currentUser && (
+                <Box>
+                  <Link as={NextLink} href="/tasks">Tasks list</Link>
+                </Box>
+              )
+            }
+          </HStack>
+          <Spacer />
           <AuthBar />
-        </nav>
-      </header>
-      <main>
+        </Flex>
+      </Box>
+
+      <Container as="main">
         {children}
-      </main>
-      <footer>
-        <hr />
-        <span>I'm here to stay (Footer)</span>
-      </footer>
+      </Container>
+
     </div>
   )
 }

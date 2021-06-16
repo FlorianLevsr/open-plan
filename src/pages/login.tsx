@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Layout from '../common/components/layouts/Layout';
 import { GetServerSideProps } from 'next';
 import getServerSidePropsWithAuthentication from '../common/utils/get-server-side-props-with-authentication';
+import { FormControl, FormLabel, Button, Input, Center } from "@chakra-ui/react"
+
 
 const LoginPage = () => {
   const router = useRouter();
@@ -24,19 +26,21 @@ const LoginPage = () => {
 
   return (
     <Layout>
-      <p>Login</p>
-      <form onSubmit={(event) => onSubmitHandler(event)}>
-        <label>
+      <form></form>
+      <FormControl>
+        <FormLabel>
           Username :
-        <input type="text" name="username" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
-        </label>
-        <label>
+          <Input type="text" name="username" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
+        </FormLabel>
+        <FormLabel>
           Password :
-        <input type="text" name="password" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
-        </label>
-        <input type="submit" value="Envoyer" />
-      </form>
-
+          <Input type="text" name="password" onChange={(event) => onchangeHandler(event.target.name, event.target.value)} />
+        </FormLabel>
+        <Center>
+          <Button bg="teal" color="white" onClick={(event) => onSubmitHandler(event)} >Log in</Button>
+          <Button bg="teal" color="white" onClick={(event) => onSubmitHandler(event)} >Log in</Button>
+        </Center>
+      </FormControl>
     </Layout>
   );
 }
