@@ -38,7 +38,6 @@ const LoginPage = () => {
         </FormLabel>
         <Center>
           <Button bg="teal" color="white" onClick={(event) => onSubmitHandler(event)} >Log in</Button>
-          <Button bg="teal" color="white" onClick={(event) => onSubmitHandler(event)} >Log in</Button>
         </Center>
       </FormControl>
     </Layout>
