@@ -41,7 +41,6 @@ const getServerSidePropsWithAuthentication =
     }
 
     const faunaTokenManager = new FaunaTokenManager(parsedCookies)
-    console.log(faunaTokenManager.get())
 
     const client = createFaunaApolloClient(faunaTokenManager.get())
 

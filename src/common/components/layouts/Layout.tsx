@@ -19,7 +19,7 @@ const AuthBar: FC = () => {
   if (currentUser) {
     return (
       <HStack>
-        <Text fontSize="sm">Bienvenue {currentUser.username}</Text>
+        <Text fontSize="sm">Welcome {currentUser.username}</Text>
         <Button
           colorScheme="teal"
           size="sm"
