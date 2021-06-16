@@ -14,7 +14,6 @@ const data = require('../data.json');
   }
 
   const {
-    NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN,
     FAUNA_DOMAIN,
     FAUNA_SECRET_ADMIN,
   } = process.env;
@@ -26,6 +25,7 @@ const data = require('../data.json');
 
   // If a URI for Fauna requests has been specified, parse it
   if (typeof FAUNA_DOMAIN !== 'undefined') {
+    // eslint-disable-next-line no-useless-escape
     const match = FAUNA_DOMAIN.match(/^(https?):\/\/([\w\.]+)(?::(\d+))?$/);
 
     // If no match was found, it means that the given string is not a valid URI.

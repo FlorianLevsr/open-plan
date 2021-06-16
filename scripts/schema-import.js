@@ -1,5 +1,6 @@
 const fs = require('fs');
 const fetch = require('node-fetch');
+// eslint-disable-next-line no-unused-vars
 const colors = require('colors');
 require('dotenv').config();
 const faunadb = require('faunadb');
@@ -27,6 +28,7 @@ const q = faunadb.query;
 
   // If a URI for Fauna requests has been specified, parse it
   if (typeof FAUNA_DOMAIN !== 'undefined') {
+    // eslint-disable-next-line no-useless-escape
     const match = FAUNA_DOMAIN.match(/^(https?):\/\/([\w\.]+)(?::(\d+))?$/);
 
     // If no match was found, it means that the given string is not a valid URI.
@@ -82,7 +84,7 @@ const q = faunadb.query;
   await importSchema();
 
   // Redefine "create user" resolver to include authentication information
-  const updateCreateUserResolver = await client.query(
+  await client.query(
     q.Update(q.Function("create_user"), {
       "body": q.Query(
         q.Lambda(["input"],
@@ -101,7 +103,7 @@ const q = faunadb.query;
   );
 
   // Define user login resolver
-  const updateLoginUserResolver = await client.query(
+  await client.query(
     q.Update(q.Function("login_user"), {
       "body": q.Query(
         q.Lambda(["input"],
@@ -118,7 +120,7 @@ const q = faunadb.query;
   );
 
   // Define user logout resolver
-  const updateLogoutUserResolver = await client.query(
+  await client.query(
     q.Update(q.Function("logout_user"), {
       "body": q.Query(
         q.Lambda([],
@@ -131,7 +133,7 @@ const q = faunadb.query;
   );
 
   // Define "create task" resolver
-  const updateCreateTaskResolver = await client.query(
+  await client.query(
     q.Update(q.Function("create_task"), {
       "body": q.Query(
         q.Lambda(["input"],
@@ -148,7 +150,7 @@ const q = faunadb.query;
   );
 
   // Define "updateTaskTitle" resolver
-  const updateUpdateTaskTitleResolver = await client.query(
+  await client.query(
     q.Update(q.Function("update_task_title"), {
       "body": q.Query(
         q.Lambda(["input"],
@@ -164,7 +166,7 @@ const q = faunadb.query;
   );
 
   // Define "updateTaskCompleted" resolver
-  const updateUpdateTaskCompletedResolver = await client.query(
+  await client.query(
     q.Update(q.Function("update_task_completed"), {
       "body": q.Query(
         q.Lambda(["input"],
