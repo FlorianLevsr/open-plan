@@ -19,7 +19,6 @@ const q = faunadb.query;
     NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN,
     FAUNA_DOMAIN,
     FAUNA_SECRET_ADMIN,
-    OVERRIDE_SCHEMA
   } = process.env;
 
   // Prepare Fauna client with the secret admin key
@@ -54,21 +53,21 @@ const q = faunadb.query;
     const stream = fs.createReadStream('schema.graphql');
 
     let overrideOption = null;
-
-    if (typeof OVERRIDE_SCHEMA !== 'undefined') {
+    const args = process.argv.slice(2).join();
+    if (typeof args !== 'undefined') {
       // eslint-disable-next-line no-useless-escape
-      const match = OVERRIDE_SCHEMA.match(/true|false$/);
+      const match = args.match(/^override=(true|false)$/);
 
       // If no match was found, it means that the given string is not true or false.
       if (!match) {
         throw new Error('OVERRIDE_SCHEMA environment variable must be a true or false.');
       }
 
-      if (match[0] === 'true') {
+      if (match[1] === 'true') {
         console.log(' Override schema option is activated '.black.bgYellow)
         overrideOption = '?mode=override';
       }
-      if (match[0] === 'false') {
+      if (match[1] === 'false') {
         console.log(' Override schema option is deactivated '.black.bgYellow)
       }
     }
@@ -272,7 +271,7 @@ const q = faunadb.query;
     })
   );
 
-  console.log(`Please put this key in your .env.local file:`.bold.green, `NEXT_PUBLIC_FAUNA_SECRET=${guestKey.secret}`.bgBlack.white);
+  console.log(`NEXT_PUBLIC_FAUNA_SECRET=${guestKey.secret}`.bgBlack.white);
 
   console.log('Defining privileges…'.yellow)
   // Define a set of access rules
