@@ -12,9 +12,12 @@ import {
 } from '@chakra-ui/react'
 import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
 import { useAuthContext } from '../../data/auth'
+import { useRouter } from 'next/router'
 
 const AuthBar: FC = () => {
-  const { currentUser, states, actions } = useAuthContext()
+  const router = useRouter()
+  const { currentUser, actions } = useAuthContext()
+  const [logout, { loading }] = actions.useLogout();
 
   if (currentUser) {
     return (
@@ -23,8 +26,8 @@ const AuthBar: FC = () => {
         <Button
           colorScheme="teal"
           size="sm"
-          isLoading={states.mutationLoading}
-          onClick={() => actions.logout()}
+          isLoading={loading}
+          onClick={() => { logout(); router.push('/') }}
         >
           <LockIcon mr={1} /> Logout
         </Button>
@@ -34,7 +37,7 @@ const AuthBar: FC = () => {
 
   return (
     <Link as={NextLink} href="/login">
-      <Button colorScheme="teal" size="sm" isLoading={states.mutationLoading}>
+      <Button colorScheme="teal" size="sm" isLoading={loading}>
         <UnlockIcon mr={1} /> Login
       </Button>
     </Link>
