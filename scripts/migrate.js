@@ -53,25 +53,31 @@ const q = faunadb.query;
     const stream = fs.createReadStream('schema.graphql');
 
     let overrideOption = null;
+
     const args = process.argv.slice(2).join();
-    if (typeof args !== 'undefined') {
-      // eslint-disable-next-line no-useless-escape
-      const match = args.match(/^override=(true|false)$/);
+    console.log(args);
 
-      // If no match was found, it means that the given string is not true or false.
-      if (!match) {
-        throw new Error('OVERRIDE_SCHEMA environment variable must be a true or false.');
-      }
+    const match = args.match(/^override=(true|false)$/);
 
+    // If override option has not been specified
+    if (!match) {
+      console.log(' Override schema option is deactivated '.black.bgYellow, '\n',
+      'Override option has not been specified. You can specify it by running \'yarn migration override=[true, false]\''.bold)
+    }
+
+    // If override option has been specified
+    if (match) {
+      // if override=true
       if (match[1] === 'true') {
         console.log(' Override schema option is activated '.black.bgYellow)
         overrideOption = '?mode=override';
       }
+
+      // if override=false
       if (match[1] === 'false') {
         console.log(' Override schema option is deactivated '.black.bgYellow)
       }
     }
-
 
     await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import${overrideOption}`, {
       method: 'POST',
@@ -259,7 +265,7 @@ const q = faunadb.query;
     })
   );
 
-  
+
   // Generate an access token with guest privileges
   console.log('Generating key for guest role…'.yellow)
   const guestKey = await client.query(
