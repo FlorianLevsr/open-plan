@@ -12,7 +12,8 @@ type LoginFormData = Record<LoginFormInputType, string>
 
 const LoginPage: NextPage = () => {
   const router = useRouter()
-  const { actions, states } = useAuthContext()
+  const { actions } = useAuthContext()
+  const [login, { loading }] = actions.useLogin()
   const [formData, setFormData] = useState<LoginFormData>({
     username: '',
     password: '',
@@ -29,7 +30,7 @@ const LoginPage: NextPage = () => {
   const onSubmitHandler = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     const { username, password } = formData
-    await actions.login(username, password)
+    await login({ variables: { username, password } })
     router.push('/tasks')
   }
 
@@ -59,7 +60,7 @@ const LoginPage: NextPage = () => {
           </FormLabel>
           <Center>
             <Button
-              isLoading={states.mutationLoading}
+              isLoading={loading}
               type="submit"
               bg="teal"
               color="white"

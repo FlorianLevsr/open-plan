@@ -1,5 +1,5 @@
 import React from 'react'
-import { gql } from '@apollo/client/core'
+import { gql, TypedDocumentNode } from '@apollo/client/core'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { useRouter } from 'next/router'
 import { createContext, FC } from 'react'
@@ -7,6 +7,7 @@ import { User } from '../types/fauna'
 import { FaunaTokenManager } from '../utils'
 import { checkDefined } from '../utils/type-checks'
 import { useContext } from 'react'
+import { MutationFromQuery } from '../types/apollo'
 
 /**
  * SECTION Interfaces
@@ -20,6 +21,11 @@ export interface CurrentUserData {
 // ANCHOR Login mutation return data structure
 interface LoginData {
   loginUser: string
+}
+
+// ANCHOR Logout mutation return data structure
+interface LogoutData {
+  logoutData: boolean
 }
 
 // ANCHOR Login input data structure
@@ -36,7 +42,7 @@ interface LoginInput {
  */
 
 // ANCHOR Describe query
-export const query = gql`
+export const query: TypedDocumentNode<CurrentUserData, undefined> = gql`
   query CurrentUserQuery {
     currentUser {
       _id
@@ -46,14 +52,14 @@ export const query = gql`
 `
 
 // ANCHOR Describe login query
-export const loginQuery = gql`
+export const loginQuery: TypedDocumentNode<LoginData, LoginInput> = gql`
   mutation LoginUser($username: String!, $password: String!) {
     loginUser(input: { username: $username, password: $password })
   }
 `
 
 // ANCHOR Describe logout query
-const logoutQuery = gql`
+export const logoutQuery: TypedDocumentNode<LogoutData> = gql`
   mutation LogoutUser {
     logoutUser
   }
@@ -68,12 +74,9 @@ const logoutQuery = gql`
 
 // ANCHOR Context value structure
 interface AuthContextValue extends CurrentUserData {
-  states: {
-    mutationLoading: boolean
-  }
   actions: {
-    login: (username: string, password: string) => void
-    logout: () => void
+    useLogin: () => MutationFromQuery<typeof loginQuery>
+    useLogout: () => MutationFromQuery<typeof logoutQuery>
   }
 }
 
@@ -104,39 +107,32 @@ export const AuthContextProvider: FC = ({ children }) => {
   const router = useRouter()
 
   // ANCHOR Mutation which allows to log in the application
-  const [loginMutation, { loading: mutationLoading }] = useMutation<
-    LoginData,
-    LoginInput
-  >(loginQuery, {
-    onCompleted: (data) => {
-      faunaTokenManager.set(data.loginUser)
-      refetch()
-    },
-  })
+  const useLogin = (): MutationFromQuery<typeof loginQuery> =>
+    useMutation(loginQuery, {
+      onCompleted: (data) => {
+        faunaTokenManager.set(data.loginUser)
+        refetch()
+        router.push('/')
+      },
+    })
 
   // ANCHOR Mutation which allows to log out from the application
-  const [logoutMutation] = useMutation(logoutQuery, {
-    onCompleted: () => {
-      faunaTokenManager.reset()
-      refetch()
-    },
-  })
+  const useLogout = (): MutationFromQuery<typeof logoutQuery> =>
+    useMutation(logoutQuery, {
+      onCompleted: () => {
+        faunaTokenManager.reset()
+        refetch()
+      },
+    })
   /**
    * !SECTION
    */
 
   // ANCHOR Pack data and actions to dispatch through components
   let value = {
-    states: {
-      mutationLoading,
-    },
     actions: {
-      login: (username: string, password: string) =>
-        loginMutation({ variables: { username, password } }),
-      logout: () => {
-        logoutMutation()
-        router.push('/')
-      },
+      useLogin,
+      useLogout,
     },
   }
 

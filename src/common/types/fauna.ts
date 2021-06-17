@@ -14,7 +14,7 @@ export interface FaunaPage<T> {
 
 export interface User extends FaunaEntity {
   username: string
-  tasks: Task[]
+  tasks?: Task[]
 }
 
 export interface Task extends FaunaEntity {
