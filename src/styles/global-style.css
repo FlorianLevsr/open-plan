@@ -1,0 +1,7 @@
+.loader_blur {
+  backdrop-filter: blur(3px);
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 100;
+}

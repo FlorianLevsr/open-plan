@@ -1,12 +1,11 @@
 import React from 'react'
 import { gql } from '@apollo/client/core'
-import { useMutation, useQuery } from '@apollo/client/react'
-import { useRouter } from 'next/router'
+import { MutationTuple, useMutation, useQuery } from '@apollo/client/react'
 import { createContext, FC } from 'react'
 import { User } from '../types/fauna'
 import { FaunaTokenManager } from '../utils'
-import { checkDefined } from '../utils/type-checks'
 import { useContext } from 'react'
+import { checkDefined } from '../utils/type-checks'
 
 /**
  * SECTION Interfaces
@@ -68,12 +67,10 @@ const logoutQuery = gql`
 
 // ANCHOR Context value structure
 interface AuthContextValue extends CurrentUserData {
-  states: {
-    mutationLoading: boolean
-  }
+  loading: boolean
   actions: {
-    login: (username: string, password: string) => void
-    logout: () => void
+    useLogin: () => MutationTuple<LoginData, LoginInput>
+    useLogout: () => MutationTuple<void, void>
   }
 }
 
@@ -91,52 +88,45 @@ export const useAuthContext = (): AuthContextValue =>
 
 // ANCHOR Context provider
 export const AuthContextProvider: FC = ({ children }) => {
+
   /**
    * SECTION Apollo hooks
    */
 
   // ANCHOR Send request using Apollo client
   const faunaTokenManager = new FaunaTokenManager()
-  const { data, refetch } = useQuery<CurrentUserData>(query, {
+  const { data, loading, refetch } = useQuery<CurrentUserData>(query, {
     errorPolicy: 'all',
   })
 
-  const router = useRouter()
-
   // ANCHOR Mutation which allows to log in the application
-  const [loginMutation, { loading: mutationLoading }] = useMutation<
-    LoginData,
-    LoginInput
-  >(loginQuery, {
-    onCompleted: (data) => {
-      faunaTokenManager.set(data.loginUser)
-      refetch()
-    },
-  })
+  const useLogin = (): MutationTuple<LoginData, LoginInput> =>
+    useMutation<LoginData, LoginInput>(loginQuery, {
+      onCompleted: (data) => {
+        faunaTokenManager.set(data.loginUser)
+        refetch()
+      }
+    });
 
   // ANCHOR Mutation which allows to log out from the application
-  const [logoutMutation] = useMutation(logoutQuery, {
-    onCompleted: () => {
-      faunaTokenManager.reset()
-      refetch()
-    },
-  })
+  const useLogout = (): MutationTuple<void, void> =>
+    useMutation(logoutQuery, {
+      onCompleted: () => {
+        faunaTokenManager.reset()
+        refetch()
+      }
+    });
+
   /**
    * !SECTION
    */
 
   // ANCHOR Pack data and actions to dispatch through components
   let value = {
-    states: {
-      mutationLoading,
-    },
+    loading,
     actions: {
-      login: (username: string, password: string) =>
-        loginMutation({ variables: { username, password } }),
-      logout: () => {
-        logoutMutation()
-        router.push('/')
-      },
+      useLogin,
+      useLogout
     },
   }
 
