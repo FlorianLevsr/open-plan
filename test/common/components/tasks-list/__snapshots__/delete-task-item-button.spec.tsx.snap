@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`should render correctly 1`] = `
+exports[`Task item delete button should render correctly 1`] = `
 <button
   className="chakra-button css-16dlnv4"
   disabled={false}

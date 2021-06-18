@@ -1,6 +1,7 @@
+import { InMemoryCache } from '@apollo/client'
 import { MockedProvider } from '@apollo/client/testing'
 import React from 'react'
-import testRenderer, { ReactTestRenderer } from 'react-test-renderer'
+import { FC } from 'react'
 import {
   query,
   createQuery,
@@ -12,11 +13,16 @@ import {
 import { User, Task } from '../../src/common/types/fauna'
 import { MockType } from './types'
 
-const user: User = { _id: 'user0', _ts: 0, username: 'a' }
-export const task: Task = { _id: 'task0', _ts: 0, title: 'Test task' }
+export const user: User = { _id: 'user0', _ts: 0, username: 'a' }
+export const task: Task = {
+  _id: 'task0',
+  _ts: 0,
+  title: 'Test task',
+  completed: false,
+}
 const initialData = {
   findUserByID: {
-    ...user,
+    _id: user._id,
     tasks: { data: [task] },
   },
 }
@@ -24,7 +30,7 @@ const initialData = {
 const queryMock: MockType<typeof query> = {
   request: {
     query,
-    variables: { ...user },
+    variables: { _id: user._id },
   },
   result: {
     data: initialData,
@@ -104,11 +110,18 @@ const mocks = [
   deleteQueryMock,
 ]
 
-export const renderUsingAllTasks = (children: JSX.Element): ReactTestRenderer =>
-  testRenderer.create(
-    <MockedProvider mocks={mocks} addTypename={false}>
-      <AllTasksContextProvider currentUser={user} initialData={initialData}>
-        {children}
-      </AllTasksContextProvider>
-    </MockedProvider>
-  )
+export const TestAllTasks: FC<{ cache: InMemoryCache }> = ({
+  cache,
+  children,
+}) => (
+  <MockedProvider
+    cache={cache}
+    mocks={mocks}
+    addTypename={false}
+    // defaultOptions={{ watchQuery: { fetchPolicy: 'no-cache' } }}
+  >
+    <AllTasksContextProvider currentUser={user} initialData={initialData}>
+      {children}
+    </AllTasksContextProvider>
+  </MockedProvider>
+)
