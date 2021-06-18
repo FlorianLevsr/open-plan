@@ -52,10 +52,34 @@ const q = faunadb.query;
     // Read the schema from the .graphql file
     const stream = fs.createReadStream('schema.graphql');
 
-    // TODO: Add optional override flag to import im override mode instead of default merge mode
-    // Send the file to Fauna
-    //?mode=override
-    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import`, {
+    let overrideOption = null;
+
+    const args = process.argv.slice(2).join();
+    console.log(args);
+
+    const match = args.match(/^override=(true|false)$/);
+
+    // If override option has not been specified
+    if (!match) {
+      console.log(' Override schema option is deactivated '.black.bgYellow, '\n',
+      'Override option has not been specified. You can specify it by running \'yarn migration override=[true, false]\''.bold)
+    }
+
+    // If override option has been specified
+    if (match) {
+      // if override=true
+      if (match[1] === 'true') {
+        console.log(' Override schema option is activated '.black.bgYellow)
+        overrideOption = '?mode=override';
+      }
+
+      // if override=false
+      if (match[1] === 'false') {
+        console.log(' Override schema option is deactivated '.black.bgYellow)
+      }
+    }
+
+    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import${overrideOption}`, {
       method: 'POST',
       body: stream,
       headers: {
@@ -78,11 +102,10 @@ const q = faunadb.query;
       });
   }
 
-  // TODO: Add console feedback to describe what's going on
-
   // Import the GraphQL schema into Fauna
   await importSchema();
 
+  console.log('Defining resolvers…'.yellow)
   // Redefine "create user" resolver to include authentication information
   await client.query(
     q.Update(q.Function("create_user"), {
@@ -125,8 +148,8 @@ const q = faunadb.query;
       "body": q.Query(
         q.Lambda([],
           q.Logout(
-          true
-        )
+            true
+          )
         )
       )
     })
@@ -192,6 +215,7 @@ const q = faunadb.query;
     })
   );
 
+  console.log('Deleting existing roles…'.yellow)
   // Delete all existing roles
   await client.query(
     q.Map(
@@ -211,7 +235,7 @@ const q = faunadb.query;
   );
 
   // ANCHOR Define a role with a set of basic access rules for non-authenticated users
-  console.info('Creating guest role…');
+  console.info('Creating guest role…'.yellow);
   await client.query(
     q.CreateRole({
       name: 'guest',
@@ -241,8 +265,9 @@ const q = faunadb.query;
     })
   );
 
+
   // Generate an access token with guest privileges
-  console.info('Generating key for guest role…');
+  console.log('Generating key for guest role…'.yellow)
   const guestKey = await client.query(
     q.CreateKey({
       role: q.Role('guest'),
@@ -252,9 +277,9 @@ const q = faunadb.query;
     })
   );
 
-  // TODO: Show only the key rather than the entire result of the query with a message explaining you should include it in your .env file
-  console.log(guestKey);
+  console.log(`NEXT_PUBLIC_FAUNA_SECRET=${guestKey.secret}`.bgBlack.white);
 
+  console.log('Defining privileges…'.yellow)
   // Define a set of access rules
   await client.query(
     q.CreateRole({
@@ -313,7 +338,7 @@ const q = faunadb.query;
             delete: isAuthor,
           }
         },
-        
+
         // Users can access only their own user data
         {
           resource: q.Collection("User"),
@@ -368,5 +393,7 @@ const q = faunadb.query;
     })
   );
 
+  console.log('Migration OK'.green)
+
 })()
-.catch(error => console.error(error));
+  .catch(error => console.error(error));
