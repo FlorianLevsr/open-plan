@@ -1,12 +1,12 @@
 import React from 'react'
 import { gql, TypedDocumentNode } from '@apollo/client/core'
 import { useMutation, useQuery } from '@apollo/client/react'
-import { useRouter } from 'next/router'
 import { createContext, FC } from 'react'
 import { User } from '../types/fauna'
 import { FaunaTokenManager } from '../utils'
 import { useContext } from 'react'
 import { MutationFromQuery } from '../types/apollo'
+import { checkDefined } from '../utils/type-checks'
 
 /**
  * SECTION Interfaces
@@ -93,14 +93,13 @@ export const useAuthContext = (): AuthContextValue =>
 
 // ANCHOR Context provider
 export const AuthContextProvider: FC = ({ children }) => {
-
   /**
    * SECTION Apollo hooks
    */
 
   // ANCHOR Send request using Apollo client
   const faunaTokenManager = new FaunaTokenManager()
-  const { data, loading, refetch } = useQuery<CurrentUserData>(query, {
+  const { data, refetch } = useQuery<CurrentUserData>(query, {
     errorPolicy: 'all',
   })
 
@@ -110,7 +109,6 @@ export const AuthContextProvider: FC = ({ children }) => {
       onCompleted: (data) => {
         faunaTokenManager.set(data.loginUser)
         refetch()
-        router.push('/')
       },
     })
 

@@ -2,7 +2,6 @@ import { InMemoryCache } from '@apollo/client'
 import { act } from '@testing-library/react'
 import { mount } from 'enzyme'
 import React from 'react'
-import testRenderer from 'react-test-renderer'
 import { DeleteTaskItemButton } from '../../../../src/common/components/task-list/task-item'
 import { query } from '../../../../src/common/data/all-tasks'
 import { checkDefinedNotNull } from '../../../../src/common/utils/type-checks'
@@ -22,21 +21,6 @@ describe('Task item delete button', () => {
   beforeEach(() => {
     // Reset memory cache
     cache = new InMemoryCache({ addTypename: false })
-  })
-
-  // ANCHOR Unit test - check for the component's HTML rendering
-  it('should render correctly', () => {
-    // Create a static render
-    const tree = testRenderer
-      .create(
-        <TestAllTasks cache={cache}>
-          <DeleteTaskItemButton task={task} />
-        </TestAllTasks>
-      )
-      .toJSON()
-
-    // Check the static render against the snapshot
-    expect(tree).toMatchSnapshot()
   })
 
   // ANCHOR Functional test - check the component intially triggers a query that fills the cache
