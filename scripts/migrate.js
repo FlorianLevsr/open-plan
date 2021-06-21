@@ -51,12 +51,8 @@ const q = faunadb.query;
   const importSchema = async () => {
     // Read the schema from the .graphql file
     const stream = fs.createReadStream('schema.graphql');
-
     let overrideOption = null;
-
     const args = process.argv.slice(2).join();
-    console.log(args);
-
     const match = args.match(/^override=(true|false)$/);
 
     // If override option has not been specified
