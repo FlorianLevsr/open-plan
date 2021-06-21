@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
 import { useAuthContext } from '../../data/auth'
+import { useRouter } from 'next/router'
 
 const AuthBar: FC = () => {
   const { currentUser, actions } = useAuthContext()

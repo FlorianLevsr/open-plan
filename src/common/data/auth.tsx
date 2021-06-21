@@ -5,7 +5,6 @@ import { useRouter } from 'next/router'
 import { createContext, FC } from 'react'
 import { User } from '../types/fauna'
 import { FaunaTokenManager } from '../utils'
-import { checkDefined } from '../utils/type-checks'
 import { useContext } from 'react'
 import { MutationFromQuery } from '../types/apollo'
 
@@ -94,17 +93,16 @@ export const useAuthContext = (): AuthContextValue =>
 
 // ANCHOR Context provider
 export const AuthContextProvider: FC = ({ children }) => {
+
   /**
    * SECTION Apollo hooks
    */
 
   // ANCHOR Send request using Apollo client
   const faunaTokenManager = new FaunaTokenManager()
-  const { data, refetch } = useQuery<CurrentUserData>(query, {
+  const { data, loading, refetch } = useQuery<CurrentUserData>(query, {
     errorPolicy: 'all',
   })
-
-  const router = useRouter()
 
   // ANCHOR Mutation which allows to log in the application
   const useLogin = (): MutationFromQuery<typeof loginQuery> =>
@@ -124,6 +122,7 @@ export const AuthContextProvider: FC = ({ children }) => {
         refetch()
       },
     })
+
   /**
    * !SECTION
    */

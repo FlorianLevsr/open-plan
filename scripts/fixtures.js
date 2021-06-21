@@ -1,4 +1,5 @@
 require('dotenv').config();
+const colors = require('colors');
 const faunadb = require('faunadb');
 const q = faunadb.query;
 
@@ -46,6 +47,8 @@ const data = require('../data.json');
 
   const { User, Task } = data;
 
+  console.log('Cleaning current collections…'.bold.yellow);
+
   for (const collectionName of Object.keys(data)) {
     await client.query(
       q.Map(
@@ -57,6 +60,8 @@ const data = require('../data.json');
     )
     .catch(error => console.error(error));
   }
+
+  console.log('Processing: data.json'.bold.yellow, '\n', 'Importing User collection…'.yellow);
 
   for (const user of User) {
     const { id, username, password } = user;
@@ -80,6 +85,8 @@ const data = require('../data.json');
     .catch(error => console.error(error))
   }
 
+  console.log('Processing: data.json'.bold.yellow, '\n', 'Importing Task collection…'.yellow);
+
   for (const task of Task) {
     const { id, title, completed, userId } = task;
     
@@ -100,5 +107,7 @@ const data = require('../data.json');
     )
     .catch(error => console.error(error))
   }
+
+  console.log('Seeding OK'.green);
 
 })();
