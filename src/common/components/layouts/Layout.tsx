@@ -15,9 +15,8 @@ import { useAuthContext } from '../../data/auth'
 import { useRouter } from 'next/router'
 
 const AuthBar: FC = () => {
-  const router = useRouter()
   const { currentUser, actions } = useAuthContext()
-  const [logout, { loading }] = actions.useLogout();
+  const [logout, { loading }] = actions.useLogout()
 
   if (currentUser) {
     return (
@@ -27,7 +26,7 @@ const AuthBar: FC = () => {
           colorScheme="teal"
           size="sm"
           isLoading={loading}
-          onClick={() => { logout(); router.push('/') }}
+          onClick={() => logout()}
         >
           <LockIcon mr={1} /> Logout
         </Button>

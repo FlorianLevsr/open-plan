@@ -1,4 +1,4 @@
-import { ChangeEvent, MouseEvent, FC, useState } from 'react'
+import React, { ChangeEvent, MouseEvent, FC, useState } from 'react'
 import { Task } from '../../types/fauna'
 import {
   FormControl,
@@ -23,7 +23,7 @@ interface TaskItemProps {
   task: Task
 }
 
-const DeleteTaskItemButton: FC<TaskItemProps> = ({ task }) => {
+export const DeleteTaskItemButton: FC<TaskItemProps> = ({ task }) => {
   const { actions } = useAllTasksContext()
   const [deleteTask, { loading }] = actions.useDeleteTask()
 
@@ -40,7 +40,7 @@ const DeleteTaskItemButton: FC<TaskItemProps> = ({ task }) => {
   )
 }
 
-const UpdateTaskCompletedItemButton: FC<TaskItemProps> = ({ task }) => {
+export const UpdateTaskCompletedItemButton: FC<TaskItemProps> = ({ task }) => {
   const { actions } = useAllTasksContext()
   const [updateTaskCompleted, { loading }] = actions.useUpdateTaskCompleted()
 
@@ -84,7 +84,7 @@ interface TaskItemWithHandlerProps {
   onClickHandler: (state: boolean) => void
 }
 
-const RenameTaskItemButton: FC<TaskItemWithHandlerProps> = ({
+export const RenameTaskItemButton: FC<TaskItemWithHandlerProps> = ({
   task,
   onClickHandler,
 }) => {

@@ -13,7 +13,7 @@ type LoginFormData = Record<LoginFormInputType, string>
 const LoginPage: NextPage = () => {
   const router = useRouter()
   const { actions } = useAuthContext()
-  const [login, { loading }] = actions.useLogin();
+  const [login, { loading }] = actions.useLogin()
   const [formData, setFormData] = useState<LoginFormData>({
     username: '',
     password: '',
