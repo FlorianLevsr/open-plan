@@ -51,31 +51,21 @@ const q = faunadb.query;
   const importSchema = async () => {
     // Read the schema from the .graphql file
     const stream = fs.createReadStream('schema.graphql');
-    let overrideOption = null;
-    const args = process.argv.slice(2).join();
-    const match = args.match(/^override=(true|false)$/);
+    let overrideOption = false;
+    const args = process.argv.slice(2);
+    if (args.includes('-o') || args.includes('--override')) {
+      overrideOption = true;
+    }
 
     // If override option has not been specified
-    if (!match) {
+    if (!overrideOption) {
       console.log(' Override schema option is deactivated '.black.bgYellow, '\n',
-      'Override option has not been specified. You can specify it by running \'yarn migration override=[true, false]\''.bold)
+      'Override option has not been specified. You can specify it by adding the -o or --override flag.'.bold)
+    } else {
+      console.log(' Override schema option is activated '.black.bgYellow)
     }
 
-    // If override option has been specified
-    if (match) {
-      // if override=true
-      if (match[1] === 'true') {
-        console.log(' Override schema option is activated '.black.bgYellow)
-        overrideOption = '?mode=override';
-      }
-
-      // if override=false
-      if (match[1] === 'false') {
-        console.log(' Override schema option is deactivated '.black.bgYellow)
-      }
-    }
-
-    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import${overrideOption}`, {
+    await fetch(`${NEXT_PUBLIC_FAUNA_GRAPHQL_DOMAIN}/import${overrideOption ? '?mode=override' : ''}`, {
       method: 'POST',
       body: stream,
       headers: {
@@ -126,12 +116,32 @@ const q = faunadb.query;
     q.Update(q.Function("login_user"), {
       "body": q.Query(
         q.Lambda(["input"],
-          q.Select(
-            "secret",
-            q.Login(
-              q.Match(q.Index("unique_User_username"), q.Select("username", q.Var("input"))),
-              { password: q.Select("password", q.Var("input")) }
-            )
+          // q.Let(
+          //   {
+          //     currentUserRef: q.Match(q.Index("unique_User_username"), q.Select("username", q.Var("input"))),
+          //   },
+          //   {
+          //     token: q.Select(
+          //       "secret",
+          //       q.Login(
+          //         q.Var("currentUserRef"),
+          //         { password: q.Select("password", q.Var("input")) }
+          //       )
+          //     ),
+          //     data: q.Var("currentUserRef")
+          //   }
+          // )
+          q.Let(
+            {
+              loginData: q.Login(
+                q.Match(q.Index("unique_User_username"), q.Select("username", q.Var("input"))),
+                { password: q.Select("password", q.Var("input")) }
+              )
+            },
+            {
+              instance: q.Select("instance", q.Var("loginData")),
+              secret: q.Select("secret", q.Var("loginData")),
+            }
           )
         )
       )
@@ -257,6 +267,13 @@ const q = faunadb.query;
             call: true
           }
         },
+        // Guests can access users' login information
+        {
+          resource: q.Collection("User"),
+          actions: {
+            read: true
+          }
+        }
       ]
     })
   );

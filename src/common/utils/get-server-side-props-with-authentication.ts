@@ -5,6 +5,8 @@ import * as cookie from 'cookie'
 import { User } from '../types/fauna'
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client/core'
 import { CurrentUserData, query } from '../data/auth'
+import usersService from '../state/users'
+import { checkDefined } from './type-checks'
 
 interface GetServerSidePropsCallbackParameters {
   client: ApolloClient<NormalizedCacheObject>
@@ -41,18 +43,26 @@ const getServerSidePropsWithAuthentication =
     }
 
     const faunaTokenManager = new FaunaTokenManager(parsedCookies)
+    const token = faunaTokenManager.get()
 
-    const client = createFaunaApolloClient(faunaTokenManager.get())
+    const client = createFaunaApolloClient(token)
 
-    let currentUser
-    try {
-      const response = await client.query<CurrentUserData>({ query })
-      if (response.data.currentUser === null) {
-        throw new Error('User is not authenticated.')
+    let currentUser = usersService.get(token) || null
+
+    if (
+      token !== process.env.NEXT_PUBLIC_FAUNA_SECRET &&
+      currentUser === null
+    ) {
+      try {
+        const response = await client.query<CurrentUserData>({ query })
+        const definedUser = checkDefined(response.data.currentUser)
+        if (definedUser === null) {
+          throw new Error('User is not authenticated.')
+        }
+        currentUser = definedUser
+      } catch (error) {
+        currentUser = null
       }
-      currentUser = response.data.currentUser
-    } catch (error) {
-      currentUser = null
     }
 
     if (xor(currentUser === null, redirectOnAuthenticated || false)) {

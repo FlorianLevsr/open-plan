@@ -27,6 +27,11 @@ type User {
     "A list of all tasks owned by the user."
     tasks: [Task!] @relation
 }
+
+type LoginData @embedded {
+    instance: User!
+    secret: String!
+}
 # ===========================================================================
 # !SECTION
 # ===========================================================================
@@ -93,7 +98,7 @@ type Mutation {
     "Register a new user account with provided username and password."
     createUser(input: CreateUserInput): User! @resolver(name: "create_user")
     "Authenticate a user with provided username and password."
-    loginUser(input: LoginUserInput): String! @resolver(name: "login_user")
+    loginUser(input: LoginUserInput): LoginData! @resolver(name: "login_user")
     "Invalidate all authentication tokens linked to currently authenticated user."
     logoutUser: Boolean! @resolver(name: "logout_user")
     "Create a new task owned by currently authenticated user."

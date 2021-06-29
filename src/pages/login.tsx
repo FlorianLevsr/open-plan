@@ -1,7 +1,17 @@
 import React, { ChangeEvent, FormEvent, useState } from 'react'
 import { useRouter } from 'next/router'
 import { GetServerSideProps, NextPage } from 'next'
-import { FormControl, FormLabel, Button, Input, Center } from '@chakra-ui/react'
+import {
+  FormControl,
+  FormLabel,
+  Button,
+  Input,
+  Center,
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+} from '@chakra-ui/react'
 import { Layout } from '../common/components/layouts'
 import { useAuthContext } from '../common/data/auth'
 import { getServerSidePropsWithAuthentication } from '../common/utils'
@@ -13,11 +23,12 @@ type LoginFormData = Record<LoginFormInputType, string>
 const LoginPage: NextPage = () => {
   const router = useRouter()
   const { actions } = useAuthContext()
-  const [login, { loading }] = actions.useLogin()
+  const [login, { error, loading }] = actions.useLogin()
   const [formData, setFormData] = useState<LoginFormData>({
     username: '',
     password: '',
   })
+  // const [error, setError] = useState<Error | undefined>()
 
   const onChangeHandler = (
     inputName: LoginFormInputType,
@@ -30,12 +41,22 @@ const LoginPage: NextPage = () => {
   const onSubmitHandler = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     const { username, password } = formData
-    await login({ variables: { username, password } })
-    router.push('/tasks')
+    try {
+      await login({ variables: { username, password } })
+      router.push('/tasks')
+      // eslint-disable-next-line no-empty
+    } catch (error) {}
   }
 
   return (
     <Layout>
+      {error && (
+        <Alert status="error">
+          <AlertIcon />
+          <AlertTitle mr={2}>Error:</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      )}
       <form>
         <FormControl>
           <FormLabel>
