@@ -70,7 +70,7 @@ const LoginForm: FC<LoginFormProps> = ({ callback, mutationResult }) => {
   return (
     <form onSubmit={onSubmitHandler}>
       {error && (
-        <Alert status="error">
+        <Alert status="error" mr={4}>
           <AlertIcon />
           <AlertTitle mr={2}>Error:</AlertTitle>
           <AlertDescription>{error.message}</AlertDescription>
@@ -85,6 +85,7 @@ const LoginForm: FC<LoginFormProps> = ({ callback, mutationResult }) => {
         <LoginFormInput
           label="Password"
           inputName="password"
+          type="password"
           setProperty={setProperty}
         />
         <Center>

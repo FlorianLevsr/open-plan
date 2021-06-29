@@ -94,18 +94,25 @@ const q = faunadb.query;
   console.log('Defining resolvers…'.yellow)
   // Redefine "create user" resolver to include authentication information
   await client.query(
-    q.Update(q.Function("create_user"), {
+    q.Update(q.Function("signup_user"), {
       "body": q.Query(
         q.Lambda(["input"],
-          q.Create(q.Collection("User"), {
-            data: {
-              username: q.Select("username", q.Var("input")),
-              role: q.Select("role", q.Var("input")),
+          q.Let(
+            {
+              createdUser: q.Create(q.Collection("User"), {
+                data: {
+                  username: q.Select("username", q.Var("input")),
+                },
+                credentials: {
+                  password: q.Select("password", q.Var("input"))
+                }
+              })
             },
-            credentials: {
-              password: q.Select("password", q.Var("input"))
-            }
-          })
+            q.Call(
+              q.Function("login_user"),
+              q.Var("input")
+            )
+          )
         )
       )
     })
@@ -116,21 +123,6 @@ const q = faunadb.query;
     q.Update(q.Function("login_user"), {
       "body": q.Query(
         q.Lambda(["input"],
-          // q.Let(
-          //   {
-          //     currentUserRef: q.Match(q.Index("unique_User_username"), q.Select("username", q.Var("input"))),
-          //   },
-          //   {
-          //     token: q.Select(
-          //       "secret",
-          //       q.Login(
-          //         q.Var("currentUserRef"),
-          //         { password: q.Select("password", q.Var("input")) }
-          //       )
-          //     ),
-          //     data: q.Var("currentUserRef")
-          //   }
-          // )
           q.Let(
             {
               loginData: q.Login(
@@ -253,6 +245,13 @@ const q = faunadb.query;
             read: true
           }
         },
+        // Guests can access the "sign up user" action
+        {
+          resource: q.Function('signup_user'),
+          actions: {
+            call: true
+          }
+        },
         // Guests can log into the application
         {
           resource: q.Function('login_user'),
@@ -271,7 +270,8 @@ const q = faunadb.query;
         {
           resource: q.Collection("User"),
           actions: {
-            read: true
+            read: true,
+            create: true
           }
         }
       ]

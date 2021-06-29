@@ -28,6 +28,7 @@ const AddTaskForm: FC = () => {
               onClick={(event) => {
                 event.preventDefault()
                 createTask({ variables: { title: newTaskName } })
+                setNewTaskName('')
               }}
             >
               <SmallAddIcon />

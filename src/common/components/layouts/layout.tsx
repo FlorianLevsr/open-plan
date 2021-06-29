@@ -10,7 +10,7 @@ import {
   Spacer,
   Container,
 } from '@chakra-ui/react'
-import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
+import { SmallAddIcon, LockIcon, UnlockIcon } from '@chakra-ui/icons'
 import { useAuthContext } from '../../data/auth'
 import { useRouter } from 'next/router'
 
@@ -39,11 +39,18 @@ const AuthBar: FC = () => {
   }
 
   return (
-    <Link as={NextLink} href="/login">
-      <Button colorScheme="teal" size="sm" isLoading={loading}>
-        <UnlockIcon mr={1} /> Login
-      </Button>
-    </Link>
+    <HStack>
+      <Link as={NextLink} href="/signup">
+        <Button colorScheme="teal" size="sm" isLoading={loading}>
+          <SmallAddIcon mr={1} /> Sign up
+        </Button>
+      </Link>
+      <Link as={NextLink} href="/login">
+        <Button colorScheme="teal" size="sm" isLoading={loading}>
+          <UnlockIcon mr={1} /> Log in
+        </Button>
+      </Link>
+    </HStack>
   )
 }
 
@@ -53,15 +60,15 @@ const Layout: FC = ({ children }) => {
   return (
     <div>
       <Box as="header" bg="purple.500" color="white" p={4} mb={4}>
-        <Flex>
-          <HStack as="nav" spacing="1em">
-            <Box>
+        <Flex as="nav">
+          <HStack as="ul" spacing="1em">
+            <Box as="li">
               <Link as={NextLink} href="/">
                 Home
               </Link>
             </Box>
             {currentUser && (
-              <Box>
+              <Box as="li">
                 <Link as={NextLink} href="/tasks">
                   Tasks list
                 </Link>
