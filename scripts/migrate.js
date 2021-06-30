@@ -60,7 +60,7 @@ const q = faunadb.query;
     // If override option has not been specified
     if (!overrideOption) {
       console.log(' Override schema option is deactivated '.black.bgYellow, '\n',
-      'Override option has not been specified. You can specify it by adding the -o or --override flag.'.bold)
+        'Override option has not been specified. You can specify it by adding the -o or --override flag.'.bold)
     } else {
       console.log(' Override schema option is activated '.black.bgYellow)
     }
@@ -101,7 +101,7 @@ const q = faunadb.query;
             {
               createdUser: q.Create(q.Collection("User"), {
                 data: {
-                  username: q.Select("username", q.Var("input")),
+                  username: q.Select("username", q.Var("input"))
                 },
                 credentials: {
                   password: q.Select("password", q.Var("input"))
@@ -153,55 +153,6 @@ const q = faunadb.query;
     })
   );
 
-  // Define "create task" resolver
-  await client.query(
-    q.Update(q.Function("create_task"), {
-      "body": q.Query(
-        q.Lambda(["input"],
-          q.Create(q.Collection("Task"), {
-            data: {
-              title: q.Select("title", q.Var("input")),
-              completed: false,
-              user: q.CurrentIdentity()
-            }
-          })
-        )
-      )
-    })
-  );
-
-  // Define "updateTaskTitle" resolver
-  await client.query(
-    q.Update(q.Function("update_task_title"), {
-      "body": q.Query(
-        q.Lambda(["input"],
-          q.Update(q.Ref(q.Collection('Task'), q.Select("id", q.Var("input"))), {
-            data: {
-              title: q.Select("title", q.Var("input")),
-              user: q.CurrentIdentity(),
-            }
-          })
-        )
-      )
-    })
-  );
-
-  // Define "updateTaskCompleted" resolver
-  await client.query(
-    q.Update(q.Function("update_task_completed"), {
-      "body": q.Query(
-        q.Lambda(["input"],
-          q.Update(q.Ref(q.Collection('Task'), q.Select("id", q.Var("input"))), {
-            data: {
-              completed: q.Select("completed", q.Var("input")),
-              user: q.CurrentIdentity(),
-            }
-          })
-        )
-      )
-    })
-  );
-
   // Define "current user" resolver
   await client.query(
     q.Update(q.Function("current_user"), {
@@ -213,6 +164,25 @@ const q = faunadb.query;
     })
   );
 
+  // ---------------------------------------------------------------
+  // Define create project resolver
+  await client.query(
+    q.Update(q.Function("create_project"), {
+      "body": q.Query(
+        q.Lambda(["input"],
+          q.Create(q.Collection("Project"), {
+            data: {
+              name: q.Select("name", q.Var("input")),
+              owningCompany: q.Select(['data', 'company'], q.Get(q.CurrentIdentity()))
+            }
+          })
+        )
+      )
+    })
+  );
+
+  // ---------------------------------------------------------------
+
   console.log('Deleting existing roles…'.yellow)
   // Delete all existing roles
   await client.query(
@@ -222,23 +192,12 @@ const q = faunadb.query;
     )
   );
 
-  const isAuthor = q.Query(
-    q.Lambda(
-      'ref',
-      q.Equals(
-        q.CurrentIdentity(),
-        q.Select(['data', 'user'], q.Get(q.Var('ref')))
-      )
-    )
-  );
-
   // ANCHOR Define a role with a set of basic access rules for non-authenticated users
   console.info('Creating guest role…'.yellow);
   await client.query(
     q.CreateRole({
       name: 'guest',
       privileges: [
-        // Guests can access the list of all usernames (required to sign in)
         {
           resource: q.Index("unique_User_username"),
           actions: {
@@ -255,13 +214,6 @@ const q = faunadb.query;
         // Guests can log into the application
         {
           resource: q.Function('login_user'),
-          actions: {
-            call: true
-          }
-        },
-        // Guests can access the "get current user" action (which should always return null for them)
-        {
-          resource: q.Function('current_user'),
           actions: {
             call: true
           }
@@ -302,56 +254,6 @@ const q = faunadb.query;
         resource: q.Collection("User")
       },
       privileges: [
-        // Users can access a list of all tasks (individual tasks for which access is not permitted will be filtered out)
-        {
-          resource: q.Index("allTasks"),
-          actions: {
-            read: true
-          }
-        },
-        {
-          resource: q.Index("unique_User_username"),
-          actions: {
-            read: true
-          }
-        },
-        {
-          resource: q.Index("task_user_by_user"),
-          actions: {
-            read: true
-          }
-        },
-        // Users can create new tasks, but they can read, modify and delete tasks only if they created them in the first place
-        {
-          resource: q.Collection("Task"),
-          actions: {
-            // Authenticated users can always create new tasks
-            create: true,
-            // Authenticated users can only read tasks they have created
-            read: isAuthor,
-            // Authenticated users can only modify tasks they have created, and cannot change their owner
-            write: q.Query(
-              q.Lambda(
-                ['oldData', 'newData'],
-                q.And(
-                  // Identity of current user is compared to identity of old user/original creator of the task
-                  q.Equals(
-                    q.CurrentIdentity(),
-                    q.Select(['data', 'user'], q.Var('oldData'))
-                  ),
-                  // Identity of the new 'writer' is compared to identity of old user/original creator of the task
-                  q.Equals(
-                    q.Select(['data', 'user'], q.Var('newData')),
-                    q.Select(['data', 'user'], q.Var('oldData'))
-                  )
-                )
-              )
-            ),
-            // Authenticated users can only delete tasks they have created
-            delete: isAuthor,
-          }
-        },
-
         // Users can access only their own user data
         {
           resource: q.Collection("User"),
@@ -365,6 +267,52 @@ const q = faunadb.query;
                 )
               )
             ),
+            write: true
+          }
+        },
+        // Users can access the Company collection
+        {
+          resource: q.Collection("Company"),
+          actions: {
+            // Authenticated user can create companies
+            create: true,
+            // Users can only access Company documents from their own company
+            read: true,
+            write: true,
+            // Users can delete Company documents if they are from this company
+            delete: true
+          }
+        },
+        {
+          resource: q.Collection("Project"),
+          actions: {
+            // Authenticated users can create projects
+            create: true,
+            // Users can access Project documents only if they share the same company
+            read: q.Query(ref =>
+              q.Equals(
+                q.Select(['data', 'company'], q.Get(q.CurrentIdentity())),
+                q.Select(['data', 'owningCompany'], q.Get(ref))
+              )),
+            // Users can only update a project if they are from the owning company
+            write: q.Query((oldData, newData) =>
+              q.And(
+                q.Equals(
+                  q.Select(['data', 'company'], q.Get(q.CurrentIdentity())),
+                  q.Select(["data", "owningCompany"], oldData)
+                ),
+                q.Equals(
+                  q.Select(["data", "owningCompany"], oldData),
+                  q.Select(["data", "owningCompany"], newData),
+                )
+              )
+            ),
+            // Users can delete Project documents only if they share the same company
+            delete: q.Query(ref =>
+              q.Equals(
+                q.Select(['data', 'company'], q.Get(q.CurrentIdentity())),
+                q.Select(['data', 'owningCompany'], q.Get(ref))
+              ))
           }
         },
         // Users can access the action that returns their own user data
@@ -381,27 +329,73 @@ const q = faunadb.query;
             call: true
           }
         },
-        // Users can access the action the function that allows a user to create a task
         {
-          resource: q.Function('create_task'),
+          resource: q.Function('create_project'),
           actions: {
             call: true
           }
         },
-        // Users can update the title of a task
+        // INDEXES
         {
-          resource: q.Function('update_task_title'),
+          resource: q.Index("unique_User_username"),
           actions: {
-            call: true
+            read: true
           }
         },
-        // Users can update the state of task (to do/completed - true/false)
         {
-          resource: q.Function('update_task_completed'),
+          resource: q.Index("allProjects"),
           actions: {
-            call: true
+            read: true
           }
-        }
+        },
+        {
+          resource: q.Index("allCompanys"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("allMissions"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("company_employees_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("client_company_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("authorized_project_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("client_company_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("offered_missions_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("offering_company_by_company"),
+          actions: {
+            read: true
+          }
+        },
       ]
     })
   );

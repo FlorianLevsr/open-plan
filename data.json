@@ -1,52 +1,123 @@
 {
     "User": [
         {
-            "id": "1",
+            "id": 1,
             "username": "jean-pierre",
-            "password": "jean-pierre"
+            "password": "jean-pierre",
+            "company": 1
         },
         {
-            "id": "2",
+            "id": 2,
             "username": "anne-marie",
-            "password": "anne-marie"
+            "password": "anne-marie",
+            "company": 2
+        },
+        {
+            "id": 3,
+            "username": "paulette",
+            "password": "paulette",
+            "company": 3
         }
     ],
-    "Task": [
+    "Company": [
         {
-            "id": "1",
-            "title": "Manger des frites",
-            "completed": false,
-            "userId": "1"
+            "id": 1,
+            "name": "Jean-Pierre - Client",
+            "siret": "362 521 879 00034",
+            "iban": "FR7630001007941234567890185",
+            "addresse": "Scrooge McDuck Manor, Donaldville",
+            "employees": [1],
+            "projects": [1],
+            "authorizedProjects": [],
+            "providedUnits": [],
+            "acceptedUnits": [],
+            "offeredMissions": [],
+            "offeringMissions": [],
+            "issuedInvoices": [],
+            "receivedInvoices": [1]
         },
         {
-            "id": "2",
-            "title": "Acheter de l'huile",
-            "completed": false,
-            "userId": "1"
+            "id": 2,
+            "name": "Anne-Marie - Société de service",
+            "siret": "521 362 987 00037",
+            "iban": "FR7630001007941234567890279",
+            "addresse": "Ile de Gorée, Sénégal",
+            "employees": [2],
+            "projects": [],
+            "authorizedProjects": [1],
+            "providedUnits": [1],
+            "acceptedUnits": [],
+            "offeredMissions": [],
+            "offeringMissions": [1],
+            "issuedInvoices": [1],
+            "receivedInvoices": []
         },
         {
-            "id": "3",
-            "title": "Aller à la piscine",
-            "completed": false,
-            "userId": "1"
-        },
+            "id": 3,
+            "name": "Paulette - Freelance",
+            "siret": "362 521 879 123456",
+            "iban": "FR7630001007941234567123456",
+            "addresse": "36eme dessous, porte gauche",
+            "employees": [3],
+            "projects": [],
+            "authorizedProjects": [],
+            "providedUnits": [],
+            "acceptedUnits": [1],
+            "offeredMissions": [1],
+            "offeringMissions": [],
+            "issuedInvoices": [],
+            "receivedInvoices": []
+        }
+    ],
+    "Project": [
         {
-            "id": "4",
-            "title": "Ranger ma chambre",
-            "completed": false,
-            "userId": "2"
-        },
+            "id": 1,
+            "name": "Formation PHP",
+            "place": "Téléprésentiel",
+            "rate": 15,
+            "owningCompany": 1,
+            "authorizedCompanies": [2],
+            "missions": []
+        }
+    ],
+    "Mission": [
         {
-            "id": "5",
-            "title": "Jouer à Dark Souls",
-            "completed": false,
-            "userId": "2"
-        },
+            "id": 1,
+            "name": "Convaincre les étudiants que le PHP c'est bien",
+            "rate": 15,
+            "project": 1,
+            "units": [1]
+        }
+    ],
+    "MissionUnit": [
         {
-            "id": "6",
-            "title": "Ouvrir des boîtes de conserve",
-            "completed": false,
-            "userId": "2"
+            "id": 1,
+            "date": "2021-06-30T09:10:58+0000",
+            "quantity": 1,
+            "mission": 1,
+            "provider": 2,
+            "freelancer": 3,
+            "missionOffers": [1]
+        }
+    ],
+    "MissionOffer": [
+        {
+            "id": 1,
+            "createdAt": "2021-06-30T09:10:58+0000",
+            "status": 0,
+            "offeredCompany": 3,
+            "offeringCompany": 2,
+            "missionUnit": 1
+        }
+    ],
+    "Invoice": [
+        {
+            "id": 1,
+            "number": "123456789FR",
+            "issuedDate": "2021-06-30T09:10:58+0000",
+            "dueDate": "2021-08-30T09:10:58+0000",
+            "clientCompany": 1,
+            "sellerCompany": 2
         }
     ]
 }
