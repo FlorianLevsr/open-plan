@@ -19,6 +19,13 @@ export interface CurrentUserData {
 }
 
 // ANCHOR Login mutation return data structure
+interface SignupData {
+  signupUser: {
+    secret: string
+    instance: User
+  }
+}
+
 interface LoginData {
   loginUser: {
     secret: string
@@ -54,6 +61,19 @@ export const query: TypedDocumentNode<CurrentUserData, undefined> = gql`
   }
 `
 
+// ANCHOR Describe signup query
+export const signupQuery: TypedDocumentNode<SignupData, LoginInput> = gql`
+  mutation SignupUser($username: String!, $password: String!) {
+    signupUser(input: { username: $username, password: $password }) {
+      secret
+      instance {
+        _id
+        username
+      }
+    }
+  }
+`
+
 // ANCHOR Describe login query
 export const loginQuery: TypedDocumentNode<LoginData, LoginInput> = gql`
   mutation LoginUser($username: String!, $password: String!) {
@@ -85,6 +105,7 @@ export const logoutQuery: TypedDocumentNode<LogoutData> = gql`
 interface AuthContextValue extends CurrentUserData {
   error?: ApolloError
   actions: {
+    useSignup: () => MutationFromQuery<typeof signupQuery>
     useLogin: () => MutationFromQuery<typeof loginQuery>
     useLogout: () => MutationFromQuery<typeof logoutQuery>
   }
@@ -122,6 +143,26 @@ export const AuthContextProvider: FC = ({ children }) => {
       }
     },
   })
+
+  // ANCHOR Mutation which allows to register an account
+  const useSignup = (): MutationFromQuery<typeof signupQuery> =>
+    useMutation(signupQuery, {
+      update: (cache, { data }) => {
+        cache.writeQuery({
+          query,
+          data: {
+            currentUser: checkDefined(
+              data,
+              'The logged-in user should not be undefined.'
+            )?.signupUser.instance,
+          },
+        })
+      },
+      onCompleted: (data) => {
+        usersService.set(data.signupUser.secret, data.signupUser.instance)
+        faunaTokenManager.set(data.signupUser.secret)
+      },
+    })
 
   // ANCHOR Mutation which allows to log in the application
   const useLogin = (): MutationFromQuery<typeof loginQuery> =>
@@ -169,6 +210,7 @@ export const AuthContextProvider: FC = ({ children }) => {
   let value = {
     error,
     actions: {
+      useSignup,
       useLogin,
       useLogout,
     },

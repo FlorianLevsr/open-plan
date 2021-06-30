@@ -96,7 +96,7 @@ input UpdateTaskCompletedInput {
 # ===========================================================================
 type Mutation {
     "Register a new user account with provided username and password."
-    createUser(input: CreateUserInput): User! @resolver(name: "create_user")
+    signupUser(input: CreateUserInput): LoginData! @resolver(name: "signup_user")
     "Authenticate a user with provided username and password."
     loginUser(input: LoginUserInput): LoginData! @resolver(name: "login_user")
     "Invalidate all authentication tokens linked to currently authenticated user."

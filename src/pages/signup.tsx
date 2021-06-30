@@ -7,17 +7,17 @@ import { getServerSidePropsWithAuthentication } from '../common/utils'
 import { LoginForm } from '../common/components'
 import { Heading } from '@chakra-ui/react'
 
-const LoginPage: NextPage = () => {
+const SignupPage: NextPage = () => {
   const router = useRouter()
   const { actions } = useAuthContext()
-  const [login, mutationResult] = actions.useLogin()
+  const [signup, mutationResult] = actions.useSignup()
 
   const callback = async (
     username: string,
     password: string
   ): Promise<void> => {
     try {
-      await login({ variables: { username, password } })
+      await signup({ variables: { username, password } })
       router.push('/tasks')
       // eslint-disable-next-line no-empty
     } catch (error) {}
@@ -26,7 +26,7 @@ const LoginPage: NextPage = () => {
   return (
     <Layout>
       <Heading as="h1" mb={6}>
-        Log in
+        Sign up
       </Heading>
       <LoginForm callback={callback} mutationResult={mutationResult} />
     </Layout>
@@ -39,4 +39,4 @@ export const getServerSideProps: GetServerSideProps =
     destination: '/tasks',
   })
 
-export default LoginPage
+export default SignupPage
