@@ -266,20 +266,16 @@ const q = faunadb.query;
                   q.Var('ref')
                 )
               )
-            ),
-            write: true
+            )
           }
         },
         // Users can access the Company collection
         {
           resource: q.Collection("Company"),
           actions: {
-            // Authenticated user can create companies
             create: true,
-            // Users can only access Company documents from their own company
             read: true,
             write: true,
-            // Users can delete Company documents if they are from this company
             delete: true
           }
         },
@@ -313,6 +309,44 @@ const q = faunadb.query;
                 q.Select(['data', 'company'], q.Get(q.CurrentIdentity())),
                 q.Select(['data', 'owningCompany'], q.Get(ref))
               ))
+          }
+        },
+        // Users can access the Mission collection
+        {
+          resource: q.Collection("Mission"),
+          actions: {
+            create: true,
+            read: true,
+            write: true,
+            delete: true
+          }
+        },
+        // Users can access the MissionUnit collection
+        {
+          resource: q.Collection("MissionUnit"),
+          actions: {
+            create: true,
+            read: true,
+            write: true,
+            delete: true
+          }
+        },
+        {
+          resource: q.Collection("MissionOffer"),
+          actions: {
+            create: true,
+            read: true,
+            write: true,
+            delete: true
+          }
+        },
+        {
+          resource: q.Collection("Invoice"),
+          actions: {
+            create: true,
+            read: true,
+            write: true,
+            delete: true
           }
         },
         // Users can access the action that returns their own user data
@@ -361,6 +395,24 @@ const q = faunadb.query;
           }
         },
         {
+          resource: q.Index("allMissionUnits"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("allMissionOffers"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("allInvoices"),
+          actions: {
+            read: true
+          }
+        },
+        {
           resource: q.Index("company_employees_by_company"),
           actions: {
             read: true
@@ -379,6 +431,12 @@ const q = faunadb.query;
           }
         },
         {
+          resource: q.Index("authorized_project_by_company_and_project"),
+          actions: {
+            read: true
+          }
+        },
+        {
           resource: q.Index("client_company_by_company"),
           actions: {
             read: true
@@ -392,6 +450,24 @@ const q = faunadb.query;
         },
         {
           resource: q.Index("offering_company_by_company"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("authorized_project_by_project"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("missionUnit_mission_by_mission"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("missionOffer_missionUnit_by_missionUnit"),
           actions: {
             read: true
           }

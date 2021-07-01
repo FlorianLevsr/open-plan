@@ -56,7 +56,7 @@ type Project {
     "A list of all companies authorized to position freelancers in the project."
     authorizedCompanies: [Company!] @relation(name: "authorized_project")
     "A list of all missions associated with the project."
-    missions: [Mission!]
+    missions: [Mission!] @relation
 }
 
 """
