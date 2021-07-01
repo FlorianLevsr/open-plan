@@ -36,7 +36,7 @@ const LoginPage: NextPage = () => {
 export const getServerSideProps: GetServerSideProps =
   getServerSidePropsWithAuthentication({
     redirectOnAuthenticated: true,
-    destination: '/tasks',
+    destination: '/projects',
   })
 
 export default LoginPage
