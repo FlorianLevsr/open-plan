@@ -6,9 +6,10 @@ import {
   useMutation,
   useQuery,
 } from '@apollo/client'
-import { createContext, FC } from 'react'
+import { createContext, FC, useContext } from 'react'
 import { MutationFromQuery } from '../types/apollo'
-import { checkDefinedNotNull } from '../utils/type-checks'
+import { User } from '../types/fauna'
+import { checkDefined, checkDefinedNotNull } from '../utils/type-checks'
 
 /**
  * SECTION Interfaces
@@ -17,12 +18,18 @@ import { checkDefinedNotNull } from '../utils/type-checks'
 interface Project {
   _id: string
   name: string
+  place: string
 }
 
 // ANCHOR Query data structure
 export interface AllProjectsData {
-  allProjects: {
-    data: Project[]
+  findUserByID: {
+    _id: string
+    company: {
+      projects: {
+        data: Project[]
+      }
+    }
   }
 }
 
@@ -45,11 +52,17 @@ interface NewProjectInput {
  */
 
 export const allProjectsQuery: TypedDocumentNode<AllProjectsData> = gql`
-  query allProjects {
-    allProjects {
-      data {
-        _id
-        name
+  query FindUserByID($_id: ID!) {
+    findUserByID(id: $_id) {
+      _id
+      company {
+        projects {
+          data {
+            _id
+            name
+            place
+          }
+        }
       }
     }
   }
@@ -73,13 +86,18 @@ export const createProjectQuery: TypedDocumentNode<
 
 // ANCHOR Initial data
 export const getInitialData = async (
-  client: ApolloClient<NormalizedCacheObject>
+  client: ApolloClient<NormalizedCacheObject>,
+  currentUser: User | undefined | null
 ): Promise<AllProjectsData> => {
-  const { data, errors } = await client.query<AllProjectsData>({
-    query: allProjectsQuery,
-  })
-  if (errors) throw errors[0]
-  return data
+  if (typeof currentUser !== undefined) {
+    const { data, errors } = await client.query<AllProjectsData>({
+      query: allProjectsQuery,
+      variables: { _id: currentUser?._id },
+    })
+    if (errors) throw errors[0]
+    return data
+  }
+  throw new Error('No user found')
 }
 
 // ANCHOR Context value structure
@@ -94,20 +112,29 @@ export const ProjectsContext = createContext<ProjectsContextValue | undefined>(
   undefined
 )
 
+// ANCHOR Use Context hook
+export const useProjectsContext = (): ProjectsContextValue =>
+  checkDefined(
+    useContext(ProjectsContext),
+    'ProjectsContext should not be undefined. Did you forget yo wrap your component inside a Provider?'
+  )
+
 // ANCHOR Context provider
 interface ProjectsContextProviderProps {
   initialData: AllProjectsData
+  currentUser: User
 }
 
 export const ProjectsContextProvider: FC<ProjectsContextProviderProps> = ({
   children,
   initialData,
+  currentUser,
 }) => {
   /**
    * SECTION Apollo hooks
    */
-
-  const { data: queryData } = useQuery(allProjectsQuery)
+  const _id = currentUser._id
+  const { data: queryData } = useQuery(allProjectsQuery, { variables: { _id } })
 
   // ANCHOR Mutation which allows to create a new item
   const useCreateProject = (): MutationFromQuery<typeof createProjectQuery> =>
@@ -120,17 +147,24 @@ export const ProjectsContextProvider: FC<ProjectsContextProviderProps> = ({
         const existingProjects = checkDefinedNotNull(
           cache.readQuery({
             query: allProjectsQuery,
+            variables: { _id },
           }),
           'Existing data should not be null or undefined in the create task callback.'
         )
         cache.writeQuery({
           query: allProjectsQuery,
+          variables: { _id },
           data: {
-            allProjects: {
-              data: [
-                ...existingProjects.allProjects.data,
-                definedData.createProject,
-              ],
+            findUserByID: {
+              _id,
+              company: {
+                projects: {
+                  data: [
+                    ...existingProjects.findUserByID.company.projects.data,
+                    definedData.createProject,
+                  ],
+                },
+              },
             },
           },
         })

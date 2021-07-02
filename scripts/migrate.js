@@ -472,6 +472,18 @@ const q = faunadb.query;
             read: true
           }
         },
+        {
+          resource: q.Index("mission_project_by_project"),
+          actions: {
+            read: true
+          }
+        },
+        {
+          resource: q.Index("project_owner_by_company"),
+          actions: {
+            read: true
+          }
+        },
       ]
     })
   );
