@@ -77,7 +77,7 @@
             "rate": 15,
             "owningCompany": 1,
             "authorizedCompanies": [2],
-            "missions": []
+            "missions": [1]
         }
     ],
     "Mission": [

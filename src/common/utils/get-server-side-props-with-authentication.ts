@@ -7,10 +7,12 @@ import { ApolloClient, NormalizedCacheObject } from '@apollo/client/core'
 import { CurrentUserData, query } from '../data/auth'
 import usersService from '../state/users'
 import { checkDefined } from './type-checks'
+import { ParsedUrlQuery } from 'querystring'
 
 interface GetServerSidePropsCallbackParameters {
   client: ApolloClient<NormalizedCacheObject>
   currentUser?: User | null | undefined
+  queryParam?: ParsedUrlQuery
 }
 
 type GetServerSidePropsCallback = (
@@ -49,6 +51,10 @@ const getServerSidePropsWithAuthentication =
 
     let currentUser = usersService.get(token) || null
 
+    // in case a query param is found
+    let queryParam = context.query
+    if (typeof context.query === undefined) queryParam = {}
+
     if (
       token !== process.env.NEXT_PUBLIC_FAUNA_SECRET &&
       currentUser === null
@@ -78,7 +84,7 @@ const getServerSidePropsWithAuthentication =
       return { props: {} }
     }
 
-    const result = await callback({ currentUser, client })
+    const result = await callback({ currentUser, client, queryParam })
     return result
   }
 
